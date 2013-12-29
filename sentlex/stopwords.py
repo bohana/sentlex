@@ -6,7 +6,6 @@
   http://nlp.uned.es/~ircourse/examples/stoplist.html
   http://www.lextek.com/manuals/onix/stopwords2.html
 '''
-
 import os
 
 
@@ -19,7 +18,7 @@ class Stopword(object):
         self.worddict = {}
         if not filename:
             curpath = os.path.dirname(os.path.abspath(__file__))
-            filename = os.path.join(curpath, '../data/objective.txt')
+            filename = os.path.join(curpath, 'data/objective.txt')
             self.load(filename)
 
     def load(self, filename):
