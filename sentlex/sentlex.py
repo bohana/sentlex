@@ -6,12 +6,11 @@ Sentiment lexicons encapsulate information from publicly available Lexicons from
 
 What a Lexicon object does:
  - for a given term, return positive/negative/neutral sentiment info, based on underlying lexicon.
- - optionally, some idea of part-of-speech information, where the underlying lexicon provides that.
- - some capability for comparing lexicons
+ - terms are divided into parts of speech (Adj/Verb/Noun/Adverb).
+ - some capability for comparing lexicons.
 
 TODO:
 - niceties - inform user of NLTK and corpus requirements
-- loader functions in try block
 '''
 
 import re,os,sys
@@ -112,37 +111,16 @@ class Lexicon(object):
     '''
       Returns True/False to query whether term is present in dict
     '''
-    if not self.N.has_key(term):
-       return False
-    else:
-       return True
+    return self.N.has_key(term)
 
   def hasverb(self,term):
-    '''
-      Returns True/False to query whether term is present in dict
-    '''
-    if not self.V.has_key(term):
-       return False
-    else:
-       return True
+    return self.V.has_key(term)
       
   def hasadverb(self,term):
-    '''
-      Returns True/False to query whether term is present in dict
-    '''
-    if not self.R.has_key(term):
-       return False
-    else:
-       return True      
+    return self.R.has_key(term)
 
   def hasadjective(self,term):
-    '''
-      Returns True/False to query whether term is present in dict
-    '''
-    if not self.A.has_key(term):
-       return False
-    else:
-       return True
+    return self.A.has_key(term)
 
   def getName(self):
     '''
@@ -202,7 +180,7 @@ class Lexicon(object):
       return {'intersect':len(I), 'agree': agree / (len(I)+0.0)}
 
 
-  def getbestvalues(self,key, A):
+  def getbestvalues(self, key, A):
     '''
      Returns score from dictionary as a proportion of how many pos/neg scores are found.
      This is necessary when terms are associated with more than 1 sense, and no disambiguation is possible.
@@ -232,7 +210,6 @@ class Lexicon(object):
         return (0,0)
     else:
         return ((foundpos/(foundpos+foundneg))*(posval/max(items,1)), (foundneg/(foundpos+foundneg))*(negval/max(items,1)))
-
 
   def compileFrequency(self):
       '''
@@ -305,6 +282,7 @@ class ResourceLexicon(Lexicon):
         self.N = self.f_loader('n',datafile)
         self.compileFrequency()
         self.is_loaded = True
+        return True
 
     def getadjective(self,term):
         '''
