@@ -186,6 +186,7 @@ class BasicDocSentiScore(DocSentiScore):
         else:
             taggedDoc = Doc
         tagsep = self._detect_tag(taggedDoc)
+        assert tagsep, 'Unable to detect tag separator'
         self._debug('[classify_document] - tag separator is %s' % tagsep)
         tags = taggedDoc.split()
 
@@ -292,11 +293,13 @@ class BasicDocSentiScore(DocSentiScore):
         # Completed scan
         if foundcounter == 0.0: foundcounter = 1.0
 
-        # resulting scores are the normalized proportions of all *scored* terms (ignoring neutrals/unknowns)
-        resultpos = float(postotal)/float(foundcounter)
-        resultneg = float(negtotal)/float(foundcounter)
-        self._debug('Totals after adjustment %2.2f, %2.2f'%(resultpos, resultneg))
-        
+        # TODO: remove this?? resulting scores are the normalized proportions of all *scored* terms (ignoring neutrals/unknowns)
+        ##resultpos = float(postotal)/float(foundcounter)
+        ##resultneg = float(negtotal)/float(foundcounter)
+        ##self._debug('Totals after adjustment %2.2f, %2.2f'%(resultpos, resultneg))
+        resultpos = postotal
+        resultneg = negtotal
+ 
         # updates class data structures containing results
         self.resultdata = {
             'annotated_doc': ' '.join(annotatedTags),

@@ -1,0 +1,47 @@
+#! /bin/env python
+
+'''
+ Classify input document using sentlex library
+'''
+
+import sentanalysis as sentdoc
+import sentlex
+from optparse import OptionParser
+
+################
+##
+## MAIN
+##
+################
+
+
+def main():
+    # grab parameters
+    mainparser = OptionParser()
+    mainparser.add_option("--file", action="store", type="string", default=None, dest="inputfile",
+                           help="Input document to analyze.")
+    mainparser.add_option("--verbose", action="store_true", default=False, dest="verbose",
+                           help="Tell everything")
+    mainparser.add_option("--notag", action="store_true", default=False, dest="not_tagged",
+                           help="Input document is not POS-tagged (POS tagging will run before classification)")
+    (options, args) = mainparser.parse_args()
+    # instantiate selected lexicon
+    L = sentlex.MobyLexicon()
+    print '...loaded %s' % L.getName()
+    # open document
+    assert options.inputfile, 'Must give an input file to analyze. Use --file'
+    f = open(options.inputfile)
+    doc = f.read()
+    # run analyzer, print output
+    ds = sentdoc.BasicDocSentiScore()
+    ds.set_active_pos(True, True, False, False)
+    ds.set_parameters(score_mode=ds.SCOREALL, score_freq=True, negation=True, negation_window=5)
+    ds.set_lexicon(L)
+    result = ds.classify_document(doc, verbose=options.verbose, tagged=(not options.not_tagged))
+    print 'Input: %s' % options.inputfile
+    print 'Classification Results (Pos,Neg): (%2.2f, %2.2f)' % (result[0], result[1])
+    if options.verbose:
+        print '\n' + ds.result_data.get('annotated_doc')
+
+if (__name__ == "__main__"):
+    main()

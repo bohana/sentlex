@@ -21,7 +21,7 @@ import unittest
 # Data
 #
 TESTDOC_ADJ = 'good/JJ good/JJ good/JJ' 
-TESTDOC_NOTAG = 'this cookie is good. it is very good indeed'
+TESTDOC_UNTAGGED = 'this cookie is good. it is very good indeed'
 TESTDOC_BADADJ = 'bad_JJ Bad_JJ bAd_JJ'
 TESTDOC_NEGATED = 'not/DT bad/JJ ./. not/DT really/RR bad/JJ'
 
@@ -79,6 +79,29 @@ class T1_scoring_documents(unittest.TestCase):
         (dpos, dneg) = ds.classify_document(TESTDOC_NEGATED, verbose=True)
         self.assertTrue(dpos > dneg, 'Did not find positive words on TESTDOC_NEGATED')
         print 'TESTDOC_NEGATED (pos,neg): %2.2f %2.2f' % (dpos, dneg)
+
+class T1_scoring_untagged(unittest.TestCase):
+    def runTest(self):
+        # load lexicon
+        L = sentlex.MobyLexicon()
+        self.assertTrue(L.is_loaded, 'Test lexicon did not load correctly')
+
+        # create a class that scores only adjectives
+        ds = sentdoc.BasicDocSentiScore()
+        ds.verbose=True
+        ds.set_active_pos(True, True, False, False)
+        ds.set_lexicon(L)
+
+        # score untagged doc - this should cause an exception
+        self.assertRaises(AssertionError, ds.classify_document, TESTDOC_UNTAGGED, verbose=True)
+
+        # this should work
+        (dpos, dneg) = ds.classify_document(TESTDOC_UNTAGGED, verbose=True, tagged=False)
+        self.assertTrue(dpos>0, 'Did not score "good" in untagged doc')
+
+        # score again, now changing all tags to false
+        (dpos, dneg) = ds.classify_document(TESTDOC_UNTAGGED, verbose=True, tagged=False, a=False, v=False, n=False, r=False)
+        self.assertTrue(dpos==0 and dneg==0, 'Scprng with no active tags should not happen')
 
 #
 # Runs unit testing if module is called directly
