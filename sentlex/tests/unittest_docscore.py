@@ -24,6 +24,7 @@ TESTDOC_ADJ = 'good/JJ good/JJ good/JJ'
 TESTDOC_UNTAGGED = 'this cookie is good. it is very good indeed'
 TESTDOC_BADADJ = 'bad_JJ Bad_JJ bAd_JJ'
 TESTDOC_NEGATED = 'not/DT bad/JJ ./. not/DT really/RR bad/JJ'
+TESTDOC_CORRUPT = 'this_DT doc_NN is_VB not_DT not_DT not_DT in great/JJ shape/JJ good_JJ good_JJ good_JJ'
 
 # T0 - Basic Class functionality
 class T0_parameter_setting(unittest.TestCase):
@@ -79,6 +80,10 @@ class T1_scoring_documents(unittest.TestCase):
         (dpos, dneg) = ds.classify_document(TESTDOC_NEGATED, verbose=True)
         self.assertTrue(dpos > dneg, 'Did not find positive words on TESTDOC_NEGATED')
         print 'TESTDOC_NEGATED (pos,neg): %2.2f %2.2f' % (dpos, dneg)
+
+        # currupt data - should still work
+        (dpos, dneg) = ds.classify_document(TESTDOC_CORRUPT, verbose=True)
+        self.assertTrue(dpos > dneg, 'Did not process corrupt document correctly')
 
 class T1_scoring_untagged(unittest.TestCase):
     def runTest(self):

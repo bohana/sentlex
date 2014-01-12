@@ -41,7 +41,7 @@ def main():
     print 'Input: %s' % options.inputfile
     print 'Classification Results (Pos,Neg): (%2.2f, %2.2f)' % (result[0], result[1])
     if options.verbose:
-        print '\n' + ds.result_data.get('annotated_doc')
+        print '\n' + ds.resultdata.get('annotated_doc')
 
 if (__name__ == "__main__"):
     main()

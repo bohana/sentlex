@@ -34,6 +34,7 @@ class DocSentiScore(object):
         self.set_neg_detection(True)
         self.L = None
         self.verbose = False
+        self.resultdata = {}
 
     def classify_document(self, Doc, tagged=True, verbose=True, **kwargs):
         '''
@@ -114,7 +115,8 @@ class DocSentiScore(object):
                 return None
             return sep
 
-        tokens = Doc.split()[:5]
+        MINTAGS=3
+        tokens = Doc.split()[:MINTAGS]
         for i in ['/', '_']:
             separator = check_sep(i, tokens)
             if separator: return separator
@@ -210,6 +212,7 @@ class BasicDocSentiScore(DocSentiScore):
         posindex = 0
         negindex = 1
         tagList = []
+        tagUnscored = []
     
         for tagword in tags:
             i += 1
@@ -217,6 +220,8 @@ class BasicDocSentiScore(DocSentiScore):
             tagfound = False
             # retrieves tuple (word, POS tag) from current word+tag string
             (thisword, thistag) = nltk.tag.str2tuple(tagword, sep=tagsep)
+            if (not thistag) or (not thisword):
+                continue  # discard corrupt data
             thisword = thisword.lower()
 
             # Adjectives 
@@ -279,6 +284,7 @@ class BasicDocSentiScore(DocSentiScore):
             # Found a tag - increase counters and add tag to list
             if tagfound:
                 tagList.append(tagword)
+                if scoretuple == (0,0): tagUnscored.append(tagword)
                 foundcounter += 1
                 if self.negation and vNEG[i-1]==1:
                     negcount += 1
@@ -307,7 +313,9 @@ class BasicDocSentiScore(DocSentiScore):
             'resultpos': resultpos,
             'resultneg': resultneg,
             'tokens_found': foundcounter,
-            'tokens_negated': sum(vNEG)
+            'tokens_negated': sum(vNEG),
+            'found_list': tagList,
+            'unscored_list': tagUnscored
         }
 
         self._debug('Result data: %s'%str(self.resultdata))
@@ -334,6 +342,6 @@ class BasicDocSentiScore(DocSentiScore):
     #
     def _score_noop(self, score, i, N):
         '''
-          no-op function: returns score given
+          no-op function: returns score given as-is
         '''
         return score
