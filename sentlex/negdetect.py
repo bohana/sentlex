@@ -76,7 +76,7 @@ NEG_POSNEGATION = ['unlikely',
     'shot down']
 
 NEG_ENDOFWINDOW = [
-    '.', ':', ',', ')', '!', ';',
+    '.', ':', ',', ')', '!', ';', '?'
     'but', 'however', 'nevertheless', 'yet', 'though', 'although',
     'still', 'aside from', 'except', 'apart from'
 ]
