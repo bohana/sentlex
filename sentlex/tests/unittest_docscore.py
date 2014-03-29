@@ -20,11 +20,12 @@ import unittest
 #
 # Data
 #
-TESTDOC_ADJ = 'good/JJ good/JJ good/JJ' 
+TESTDOC_ADJ = 'good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ' 
 TESTDOC_UNTAGGED = 'this cookie is good. it is very good indeed'
 TESTDOC_BADADJ = 'bad_JJ Bad_JJ bAd_JJ'
 TESTDOC_NEGATED = 'not/DT bad/JJ ./. not/DT really/RR bad/JJ'
 TESTDOC_CORRUPT = 'this_DT doc_NN is_VB not_DT not_DT not_DT in great/JJ shape/JJ good_JJ good_JJ good_JJ'
+TESTDOC_EMPTY = ''
 
 # T0 - Basic Class functionality
 class T0_parameter_setting(unittest.TestCase):
@@ -85,7 +86,7 @@ class T1_scoring_documents(unittest.TestCase):
         (dpos, dneg) = ds.classify_document(TESTDOC_CORRUPT, verbose=True)
         self.assertTrue(dpos > dneg, 'Did not process corrupt document correctly')
 
-class T1_scoring_untagged(unittest.TestCase):
+class T2_scoring_untagged(unittest.TestCase):
     def runTest(self):
         # load lexicon
         L = sentlex.MobyLexicon()
@@ -107,6 +108,47 @@ class T1_scoring_untagged(unittest.TestCase):
         # score again, now changing all tags to false
         (dpos, dneg) = ds.classify_document(TESTDOC_UNTAGGED, verbose=True, tagged=False, a=False, v=False, n=False, r=False)
         self.assertTrue(dpos==0 and dneg==0, 'Scprng with no active tags should not happen')
+
+class T3_scoring_functions(unittest.TestCase):
+    def runTest(self):
+        # load lexicon
+        L = sentlex.MobyLexicon()
+        self.assertTrue(L.is_loaded, 'Test lexicon did not load correctly')
+
+        ds = sentdoc.BasicDocSentiScore()
+        ds.verbose=True
+        ds.set_active_pos(True, True, False, False)
+        ds.set_lexicon(L)
+        print '=== cosine ==='
+        ds.set_parameters(score_function='cosine')
+        (dpos, dneg) = ds.classify_document(TESTDOC_ADJ, verbose=True)
+        print '=== linear ==='
+        ds.set_parameters(score_function='linear')
+        (dpos, dneg) = ds.classify_document(TESTDOC_ADJ, verbose=True)
+        for i in range(1,11):
+            print ds._score_cosine(1.0, i, 10),
+        print '\nLinear'
+        for i in range(1,11):
+            print ds._score_linear(1.0, i, 10),
+
+class T4_sample_classes(unittest.TestCase):
+    def runTest(self):
+        # load lexicon
+        L = sentlex.MobyLexicon()
+        self.assertTrue(L.is_loaded, 'Test lexicon did not load correctly')
+        print '=== Testing all sample algorithms==='
+        for algo in [ sentdoc.AV_AllWordsDocSentiScore(), 
+                      sentdoc.A_AllWordsDocSentiScore(),
+                      sentdoc.A_OnceWordsDocSentiScore(),
+                      sentdoc.AV_OnceWordsDocSentiScore(),
+                      sentdoc.AV_Lin_AllWordsDocSentiScore(),
+                      sentdoc.A_Lin_AllWordsDocSentiScore(),
+                      sentdoc.A_Cos_AllWordsDocSentiScore(),
+                      sentdoc.AV_Cos_AllWordsDocSentiScore()]:
+            algo.verbose=True
+            algo.set_lexicon(L)
+            algo.set_active_pos(True, True, False, False)
+            (p,n) = algo.classify_document(TESTDOC_ADJ, verbose=True)
 
 #
 # Runs unit testing if module is called directly
