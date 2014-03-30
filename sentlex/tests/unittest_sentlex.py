@@ -12,7 +12,7 @@ import unittest
 class T0_generic(unittest.TestCase):
     def runTest(self):
         L = sentlex.MobyLexicon()
-        L.setName('UnitTest')
+        L.set_name('UnitTest')
 
         self.assertEqual(L.get_name(), 'UnitTest', 'Could not retrieve name for this Lex')
         self.assertEqual(L.hasadjective('good'), True, 'Wheres the word good??')
@@ -47,10 +47,10 @@ class T3_multiplelexicons(unittest.TestCase):
         L2 = sentlex.MobyLexicon()
         L3 = sentlex.MobyLexicon()
         L4 = sentlex.MobyLexicon()
-        L1.setName('UnitTest1')
-        L2.setName('UnitTest2')
-        L3.setName('UnitTest3')
-        L4.setName('UnitTest4')
+        L1.set_name('UnitTest1')
+        L2.set_name('UnitTest2')
+        L3.set_name('UnitTest3')
+        L4.set_name('UnitTest4')
 
         self.assertEqual(L4.get_name(), 'UnitTest4', 'Something weird with lexicon instantiation.')
         self.assertEqual(L3.get_name(), 'UnitTest3', 'Something weird with lexicon instantiation.')

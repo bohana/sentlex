@@ -41,7 +41,7 @@ class PottsDocSentiScore(BasicDocSentiScore):
             # with the total of negated instances we can compute the adjustment
             # each negating term counts "negated_term_adj" in scoring weight
             negtmp = negtmp + (self.negated_term_adj*negated_instances)
-            self._debug('[PottsDocSentiScore] - Negative score now adjusted from %2.2f to %2.2f'%(negval, negtmp))
+            self._debug('[PottsDocSentiScore] - Instances Found: %d. Negative score now adjusted from %2.2f to %2.2f'%(negated_instances, negval, negtmp))
         return (postmp, negtmp)
 
     def set_parameters(self, **kwargs):
