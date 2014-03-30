@@ -222,8 +222,8 @@ def docSentiScore(L, Doc, aflag, vflag, rflag, nflag, negflag, negwindow=5,
            if (scoringmethod in [ SCOREWITHFREQ, SCOREWITHSTOP ] ):
               # Scoring with frequency information
               # Frequency is a real valued at 0.0-1.0. We calculate sqrt function so that the value grows faster even for numbers close to 0 
-              posval += w(scoretuple[posindex],i,doclen) * (1.0 - math.sqrt(L.getFreq( thisterm )) )
-              negval += w(scoretuple[negindex],i,doclen) * (1.0 - math.sqrt(L.getFreq( thisterm )) )
+              posval += w(scoretuple[posindex],i,doclen) * (1.0 - math.sqrt(L.get_freq( thisterm )) )
+              negval += w(scoretuple[negindex],i,doclen) * (1.0 - math.sqrt(L.get_freq( thisterm )) )
               
            else:
               # Just plain scoring from lexicon - add

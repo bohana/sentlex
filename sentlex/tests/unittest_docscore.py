@@ -137,18 +137,17 @@ class T4_sample_classes(unittest.TestCase):
         L = sentlex.MobyLexicon()
         self.assertTrue(L.is_loaded, 'Test lexicon did not load correctly')
         print '=== Testing all sample algorithms==='
-        for algo in [ sentdoc.AV_AllWordsDocSentiScore(), 
-                      sentdoc.A_AllWordsDocSentiScore(),
-                      sentdoc.A_OnceWordsDocSentiScore(),
-                      sentdoc.AV_OnceWordsDocSentiScore(),
-                      sentdoc.AV_Lin_AllWordsDocSentiScore(),
-                      sentdoc.A_Lin_AllWordsDocSentiScore(),
-                      sentdoc.A_Cos_AllWordsDocSentiScore(),
-                      sentdoc.AV_Cos_AllWordsDocSentiScore()]:
+        for algo in [ sentdoc.AV_AllWordsDocSentiScore(L), 
+                      sentdoc.A_AllWordsDocSentiScore(L),
+                      sentdoc.A_OnceWordsDocSentiScore(L),
+                      sentdoc.AV_OnceWordsDocSentiScore(L),
+                      sentdoc.AV_Lin_AllWordsDocSentiScore(L),
+                      sentdoc.A_Lin_AllWordsDocSentiScore(L),
+                      sentdoc.A_Cos_AllWordsDocSentiScore(L),
+                      sentdoc.AV_Cos_AllWordsDocSentiScore(L)]:
             algo.verbose=True
-            algo.set_lexicon(L)
-            algo.set_active_pos(True, True, False, False)
             (p,n) = algo.classify_document(TESTDOC_ADJ, verbose=True)
+            self.assertTrue(p>n, 'Sample document not scored correctly in %s' % str(algo.__class__))
 
 #
 # Runs unit testing if module is called directly

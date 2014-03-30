@@ -65,7 +65,7 @@ class Lexicon(object):
             neutral=neutral+1
       return (postotal,negtotal,neutral)
   
-  def printinfo(self):
+  def print_info(self):
       '''
         Print information about this lexicon. Does not work for dynamic/composite lexicons.
       '''
@@ -85,7 +85,7 @@ class Lexicon(object):
       (postotal,negtotal,neutral) = self._termdistro(self.N)
       print " - Noun (N): POS=" + str(postotal) + " , NEG=" + str(negtotal) + " , NEUTRAL="+ str(neutral)
 
-  def getinfo(self):
+  def get_info(self):
       '''
         Like printinfo, but returns json for machine processing
       '''
@@ -122,13 +122,13 @@ class Lexicon(object):
   def hasadjective(self,term):
     return self.A.has_key(term)
 
-  def getName(self):
+  def get_name(self):
     '''
       Returns name for this lexicon
     '''
     return self.LexName
 
-  def setName(self, newname):
+  def set_name(self, newname):
     '''
       Sets lexicon name other than default
     '''
@@ -211,19 +211,20 @@ class Lexicon(object):
     else:
         return ((foundpos/(foundpos+foundneg))*(posval/max(items,1)), (foundneg/(foundpos+foundneg))*(negval/max(items,1)))
 
-  def compileFrequency(self):
+  def compile_frequency(self):
       '''
         Generate corpus based frequency distribution for terms in this lexicon.
         We use NLTK's brown corpus of (potentially) opinionated articles as our source data.
       '''
       # Load corpus
-      BC = brown.words(categories=['news','editorial','reviews'])
+      # Mar-14 - extending to entire brown corpus for better coverage
+      BC = brown.words()
 
       # Build freq dist only for terms found in lexicon
-      self.LexFreq = nltk.FreqDist( [ t.lower() for t in BC if (self.hasnoun(t) or self.hasverb(t) or self.hasadverb(t) or self.hasadjective(t)) ] )
+      self.LexFreq = nltk.FreqDist([t.lower() for t in BC if (self.hasnoun(t) or self.hasverb(t) or self.hasadverb(t) or self.hasadjective(t))])
       self.is_compiled = True
 
-  def getFreq(self, term):
+  def get_freq(self, term):
       '''
         Retrieves term's *relative* frequency in relation to lexicon's most frequent term as obtained from Brown corpus data
       '''
@@ -280,7 +281,7 @@ class ResourceLexicon(Lexicon):
         self.V = self.f_loader('v',datafile)
         self.R = self.f_loader('r',datafile)
         self.N = self.f_loader('n',datafile)
-        self.compileFrequency()
+        self.compile_frequency()
         self.is_loaded = True
         return True
 

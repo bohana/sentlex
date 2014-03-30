@@ -184,15 +184,14 @@ class BasicDocSentiScore(DocSentiScore):
               (not self.score_stop)
              )
            ):
+            posval = self.score_function(scoretuple[posindex], i, doclen)
+            negval = self.score_function(scoretuple[negindex], i, doclen)
             if self.score_freq:
                 # Scoring with frequency information
                 # Frequency is a real valued at 0.0-1.0. We calculate sqrt function so that the value grows faster even for numbers close to 0 
-                posval = self.score_function(scoretuple[posindex], i, doclen) * (1.0 - math.sqrt(self.L.getFreq(thisword)))
-                negval = self.score_function(scoretuple[negindex], i, doclen) * (1.0 - math.sqrt(self.L.getFreq(thisword)))
-            else:
-                # Just plain scoring from lexicon - add
-                posval = self.score_function(scoretuple[posindex], i, doclen)
-                negval = self.score_function(scoretuple[negindex], i, doclen)
+                posval *= 1.0 - max(math.sqrt(self.L.get_freq(thisword)), 0.25)
+                negval *= 1.0 - max(math.sqrt(self.L.get_freq(thisword)), 0.25)
+            self._debug('[_get_word_contribution] word %s (%s) at %d-th place on docsize %d is eligible (%2.2f, %2.2f).' % (thisword, str(scoretuple), i, doclen, posval, negval))
 
         return (posval, negval)
 
@@ -254,12 +253,6 @@ class BasicDocSentiScore(DocSentiScore):
  
         # Negation detection pre-processing - return an array w/ position of negated terms
         self.vNEG = self._negation_calc(tags, self.negation_window)
-        # now we compute how many times a negated term was found - this should be
-        # the number of [0,1] pairs in vNEG
-        #if len(self.vNEG)>=3:
-        #    negated_instances = len([self.vNEG[i:i+2] for i in range(len(self.vNEG)-1) if self.vNEG[i:i+2]==[0,1]])
-        #else:
-        #    negated_instances = 0
 
         # Scan for scores for each POS
         # After POS-tagging a term will appear as either term/POS or term_POS
@@ -305,7 +298,7 @@ class BasicDocSentiScore(DocSentiScore):
                 self._debug('Running total (pos,neg): %2.2f, %2.2f'%(postotal,negtotal))
 
                 # Found a tag - increase counters and add tag to list
-                self.tag_counter.update(tagword)
+                self.tag_counter.update([tagword])
                 if scoretuple == (0,0): tagUnscored.append(tagword)
                 foundcounter += 1
                 if self.negation and self.vNEG[i-1]==1:
@@ -321,9 +314,6 @@ class BasicDocSentiScore(DocSentiScore):
         # Completed scan - execute final score adjustments
         (resultpos, resultneg) = self._doc_score_adjust(postotal, negtotal)
 
-        # adjust for negating terms [Potts,2011] - the default value here is 0.0
-        #resultneg = resultneg+(self.negated_term_adj*negated_instances)
- 
         # updates class data structures containing results
         self.resultdata = {
             'annotated_doc': ' '.join(annotatedTags),

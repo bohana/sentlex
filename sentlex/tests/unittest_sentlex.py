@@ -14,7 +14,7 @@ class T0_generic(unittest.TestCase):
         L = sentlex.MobyLexicon()
         L.setName('UnitTest')
 
-        self.assertEqual(L.getName(), 'UnitTest', 'Could not retrieve name for this Lex')
+        self.assertEqual(L.get_name(), 'UnitTest', 'Could not retrieve name for this Lex')
         self.assertEqual(L.hasadjective('good'), True, 'Wheres the word good??')
         self.assertEqual(L.hasadjective('bad'), True, 'Wheres the word bad??')
         self.assertEqual(L.hasadjective('evil'), True, 'Wheres the word evil??')
@@ -24,21 +24,21 @@ class T0_generic(unittest.TestCase):
         self.assertEqual(L.getadjective('good'), (1.0,0.0), 'Value for term good <> 1')
         self.assertEqual(L.getadjective('bad'), (0.0,1.0), 'Value for term <> 0')
 
-        # getinfo
-        self.assertTrue(L.getinfo()['a']['size'] > 0, 'getinfo failed for a.')
-        self.assertTrue(L.getinfo()['n']['size'] > 0, 'getinfo failed for n.')
-        self.assertTrue(L.getinfo()['v']['size'] > 0, 'getinfo failed for v.')
-        self.assertTrue(L.getinfo()['r']['size'] > 0, 'getinfo failed for r.')
+        # get_info
+        self.assertTrue(L.get_info()['a']['size'] > 0, 'get_info failed for a.')
+        self.assertTrue(L.get_info()['n']['size'] > 0, 'get_info failed for n.')
+        self.assertTrue(L.get_info()['v']['size'] > 0, 'get_info failed for v.')
+        self.assertTrue(L.get_info()['r']['size'] > 0, 'get_info failed for r.')
 
 class T2_freqdist(unittest.TestCase):
     def runTest(self):
         L = sentlex.MobyLexicon()
-        L.compileFrequency()
+        L.compile_frequency()
 
         self.assertTrue(L.is_loaded, 'Lexicon did not load')
         self.assertTrue(L.is_compiled, 'Lexicon did not compile')
-        self.assertTrue(L.getFreq('good') > 0, 'Frq dist looks broken')
-        self.assertTrue(L.getFreq('notawordnowayjosay') == 0.0, 'Freq found a non existent word')
+        self.assertTrue(L.get_freq('good') > 0, 'Frq dist looks broken')
+        self.assertTrue(L.get_freq('notawordnowayjosay') == 0.0, 'Freq found a non existent word')
 
 # T3. Multiple lexicons
 class T3_multiplelexicons(unittest.TestCase):
@@ -52,10 +52,10 @@ class T3_multiplelexicons(unittest.TestCase):
         L3.setName('UnitTest3')
         L4.setName('UnitTest4')
 
-        self.assertEqual(L4.getName(), 'UnitTest4', 'Something weird with lexicon instantiation.')
-        self.assertEqual(L3.getName(), 'UnitTest3', 'Something weird with lexicon instantiation.')
-        self.assertEqual(L2.getName(), 'UnitTest2', 'Something weird with lexicon instantiation.')
-        self.assertEqual(L1.getName(), 'UnitTest1', 'Something weird with lexicon instantiation.')
+        self.assertEqual(L4.get_name(), 'UnitTest4', 'Something weird with lexicon instantiation.')
+        self.assertEqual(L3.get_name(), 'UnitTest3', 'Something weird with lexicon instantiation.')
+        self.assertEqual(L2.get_name(), 'UnitTest2', 'Something weird with lexicon instantiation.')
+        self.assertEqual(L1.get_name(), 'UnitTest1', 'Something weird with lexicon instantiation.')
 
 # Morph lexicon
 class T_morpho(unittest.TestCase):
