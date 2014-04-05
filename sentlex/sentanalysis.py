@@ -292,7 +292,7 @@ class BasicDocSentiScore(DocSentiScore):
             # Add this word contribution to total
             #
             if tagfound:
-                (posval, negval) = self._get_word_contribution(thisword, thistag, scoretuple, i, doclen)
+                (posval, negval) = self._get_word_contribution(thisword, tagword, scoretuple, i, doclen)
                 postotal += posval
                 negtotal += negval
                 self._debug('Running total (pos,neg): %2.2f, %2.2f'%(postotal,negtotal))
