@@ -5,7 +5,7 @@ from distutils.core import setup
 
 setup(
     name='SentLex',
-    version='0.1.25dev',
+    version='0.1.28dev',
     author='Bruno Ohana',
     author_email='bohana@gmail.com',
     packages=['sentlex', 'sentlex.tests'],
