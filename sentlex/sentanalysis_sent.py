@@ -8,6 +8,7 @@
 
 # library imports
 import sentlex
+import collections
 from docscoreutil import *
 from sentanalysis import DocSentiScore
 from sentanalysis_potts import AV_AggressivePottsSentiScore
@@ -45,9 +46,16 @@ class SentenceDocSentiScore(DocSentiScore):
             if token in end_of_sentence:
                 sentences.append(' '.join(cur_sent))
                 cur_sent = []
+        # finally, if cur_sent is not empty count as last sentence
+        if cur_sent:
+            sentences.append(' '.join(cur_sent))
         return sentences
 
-    def _calc_sentence_scores(sent_scores):
+    def _calc_sentence_scores(self, sent_scores):
+        '''
+         Given list of tuples indicating individual scores for each sentence, returns aggregate (pos,neg) scores for document.
+         The default method simply returns sum of scores for positive and negative results.
+        '''
         pos_total = sum([x[0] for x in sent_scores])
         neg_total = sum([x[1] for x in sent_scores])
         return (pos_total, neg_total)
@@ -72,6 +80,7 @@ class SentenceDocSentiScore(DocSentiScore):
 
         # tokenize into sentences
         tagged_sentences = self._sent_tokenize(tagged_doc, tagsep)
+        self._debug('[sent classifier] - Found %d sentences' % len(tagged_sentences))
         sent_scores = []
         # initialize data structure containing results
         self.resultdata = {
@@ -86,26 +95,31 @@ class SentenceDocSentiScore(DocSentiScore):
         }
         for sentence in tagged_sentences:
             # classify sentence
-            (cur_pos, cur_neg) = self.sentence_classifier.classify_document(sentence, tagged=True)
-            if cur_pos>cur_neg:
-               sent_scores.append((1,0))
-            elif cur_neg>cur_pos:
-               sent_scores.append((0,1))
-            else:
-               sent_scores.append((0,0))
+            try:
+                self._debug('[sent classifier] %s' % sentence)
+                (cur_pos, cur_neg)=self.sentence_classifier.classify_document(sentence, tagged=True, verbose=verbose)
+                if cur_pos>cur_neg:
+                   sent_scores.append((1,0))
+                elif cur_neg>cur_pos:
+                   sent_scores.append((0,1))
+                else:
+                   sent_scores.append((0,0))
+                self._debug('[sent classifier] - sentence scores: %s' % str(sent_scores))
 
-            self._debug('[sent classifier] - sentence scores: %s' % str(sent_scores))
-
-            # update algorithm results
-            self.resultdata['tokens_found'] += self.sentence_classifier.resultdata['tokens_found']
-            self.resultdata['annotated_doc'] += self.sentence_classifier.resultdata['annotated_doc']
-            self.resultdata['tokens_negated'] += self.sentence_classifier.resultdata['tokens_negated']
-            self.resultdata['unscored_list'] += self.sentence_classifier.resultdata['unscored_list']
-            self.resultdata['found_list'].update(self.sentence_classifier.resultdata['found_list'])
+                # update algorithm results
+                self.resultdata['tokens_found'] += self.sentence_classifier.resultdata['tokens_found']
+                self.resultdata['annotated_doc'] += self.sentence_classifier.resultdata['annotated_doc']
+                self.resultdata['tokens_negated'] += self.sentence_classifier.resultdata['tokens_negated']
+                self.resultdata['unscored_list'] += self.sentence_classifier.resultdata['unscored_list']
+                self.resultdata['found_list'].update(self.sentence_classifier.resultdata['found_list'])
+            except Exception,e:
+                self._debug('[sent classifier] - Error processing sentence: %s' % str(e))
+                raise #continue
 
         (resultpos, resultneg) = self._calc_sentence_scores(sent_scores)
         self.resultdata['resultpos'] = resultpos
         self.resultdata['resultneg'] = resultneg
+        self.resultdata['sentence_scores'] = sent_scores
         return (resultpos, resultneg)
 
     def set_parameters(self, **kwargs):

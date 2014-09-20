@@ -78,8 +78,9 @@ class DocSentiScore(object):
                 return None
             return sep
 
-        MINTAGS=3
-        tokens = Doc.split()[:MINTAGS]
+        tokens = Doc.split()
+        mintags = min(3, len(tokens))
+        tokens = tokens[:mintags]
         for i in ['/', '_']:
             separator = check_sep(i, tokens)
             if separator: return separator

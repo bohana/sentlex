@@ -10,7 +10,7 @@
  More about NegEx:
  http://rods.health.pitt.edu/LIBRARY/NLP%20Papers/chapman_JBI_2001_negation.pdf
 
- This implementation adds more tokens to the original implementation from Chapman et al.
+ This implementation adds a few more tokens to the original implementation from Chapman et al.
 '''
 import re
 
@@ -96,7 +96,7 @@ def getNegationArray(doc, windowsize, debugmode=False):
         
         the_DT hype_NN and_CC is_VBZ a_DT very_RB seductive_JJ
 
-      Returns array A where A[i] indicates whether this position in the document has been negated by an expression (value = 1), or not (value = 0).
+      Returns array A where A[i] indicates whether this position in the document has been negated by an expression (1), or not (0).
     '''
 
     def debug(msg):
@@ -107,11 +107,9 @@ def getNegationArray(doc, windowsize, debugmode=False):
 
     # Initialise array
     vNEG = [0 for t in range(len(doc))]
-
     # Initialise window counters
     winstart = 0
     docsize = len(doc)
-
     i = 0
     found_pseudo = False
     found_neg_fwd = False
@@ -120,19 +118,19 @@ def getNegationArray(doc, windowsize, debugmode=False):
 
     # detect POS separator from 1st token. Use '_' if none found
     separator = '_'
-    if docsize>0 and re.search('[/_]', doc[1]):
-        separator = doc[1][re.search('[/_]', doc[1]).start()]
-    elif docsize>1 and re.search('[/_]', doc[2]):
+    if docsize>0 and re.search('[/_]', doc[0]):
+        separator = doc[0][re.search('[/_]', doc[0]).start()]
+    elif docsize>1 and re.search('[/_]', doc[1]):
         # second try
-        separator = doc[2][re.search('[/_]', doc[2]).start()]
-    elif separator not in '_/': 
+        separator = doc[1][re.search('[/_]', doc[1]).start()]
+    elif separator not in '_/':
         debug('Warning. Could not find a separator from input. Using "_"')
         separator = '_'
 
     for i in range(docsize):
         # Build 1-term and 2-term strings.
         unigram = doc[i].split(separator)[0]
-        bigram = ''   
+        bigram = ''
         if i < (docsize - 1):
             bigram = ' '.join([unigram, doc[i+1].split(separator)[0]])
         else:
