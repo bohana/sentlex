@@ -160,9 +160,7 @@ def readGI(postag, datafile=None):
       Reads term information from General Enquirer database. Returns dictionary of items
     """
     A={}
-    if datafile == None:
-       return None
-	
+    if not datafile: return None
     f=open(datafile,'r',1024000)
 	
     # Loop through every line in SWN file
@@ -187,4 +185,29 @@ def readGI(postag, datafile=None):
             else:
               A[term].append((term, 0, 0))
 	
+    return A
+
+
+def readUIC(postag, datafile=None):
+    '''
+     Reads UIC lexicon words for a given part of speech. This lexicon is based on http://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html
+    '''
+    A={}
+    if not datafile: return None
+    f = open(datafule,'r')
+    for line in f:
+        # get tokens
+        # input file is in format: 
+        #  [pos|neg],word,pos
+        items = line.split(',')
+        termpos = items[2]
+        valence = items[0]
+        word = items[1]
+        if termpos==postag:
+            if not word in A:
+                A[word] = []
+            if valence=='pos':
+                A[word].append((word, 1, 0))
+            else:
+                A[word].append((word, 0, 1))
     return A

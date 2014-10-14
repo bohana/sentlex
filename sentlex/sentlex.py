@@ -247,17 +247,16 @@ class Lexicon(object):
 class ResourceLexicon(Lexicon):
     '''
      Sentiment lexicon based on an existing data source (resource)
-     This lexicon obtains sentiment information via the load() method.
-     A loader function that understands the underlying data format is passed as init argument.
-     Word sentiment information uses getbestvalues() - an average of tuples (pos, neg) for all known senses of the word.
+     This lexicon obtains sentiment information via the load() method - a loader function that understands the underlying data format.
+     Word sentiment information uses getbestvalues() - an average of tuples (pos, neg) for all known senses of the word (if more than one exists).
 
-     Loader functions take the form: 
+     The loader functions take the form: 
 
           f(pos, datafile)
 
      And return a dict mapping words to tuples of (pos,neg) pairs:
 
-          D[word] = [ (p,n), (p,n) ... ]
+          D[word] = [ (word, p,n), (word, p,n) ... ]
 
      Representing all known (p,n) values for word in the given part of speech.
      Note that it is common for a word to map to more than a single sense, thus multiple data points are allowed.
@@ -330,7 +329,7 @@ class CompositeLexicon(Lexicon):
 
       this ensures if iformation about a word exists in L1, it will be used first. 
       Lexicons should be added from most accurate to least accurate.
-  '''
+    '''
 
     def __init__(self):
         super(CompositeLexicon,self).__init__()
@@ -438,4 +437,26 @@ class SWN3Lexicon(ResourceLexicon):
         curpath = os.path.dirname(os.path.abspath(__file__))
         datapath = os.path.join(curpath, 'data/SentiWordNet_3.0.0.lex')
         super(SWN3Lexicon,self).__init__('SWN3', sentlexutil.readSWN3)
+        self.load(datapath)
+
+
+class UICLexicon(ResourceLexicon):
+    '''
+      The UIC lexicon is based upon positive and negative word lists from Univ. of Chicago Illinois.
+
+      The source word list can be downloaded from:
+      http://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html
+
+      And referenced on:
+
+       Minqing Hu and Bing Liu. "Mining and Summarizing Customer Reviews." 
+       Proceedings of the ACM SIGKDD International Conference on Knowledge 
+       Discovery and Data Mining (KDD-2004), Aug 22-25, 2004, Seattle, 
+       Washington, USA, 
+
+    '''
+    def __init__(self):
+        curpath = os.path.dirname(os.path.abspath(__file__))
+        datapath = os.path.join(curpath, 'data/uic.lex')
+        super(SWN3Lexicon,self).__init__('UIC', sentlexutil.readUIC)
         self.load(datapath)
