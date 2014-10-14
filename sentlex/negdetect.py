@@ -1,11 +1,10 @@
 '''
  An implementation of the NegEx algorithm for negation detection in a document.
 
- Negex works by scanning for known negating patterns in text.
+ Negex works by scanning for known explicit negating markers in the form of unigrams and bigrams.
  A found pattern triggers a negated 'window' of specific size in tokens.
  Anything within a negated window is considered a negated sentence.
- Negating windows can be forwards or backwards from the negated pattern,
- and are bounded by punctuation, known limiting tokens or a user-specified maximum window size.
+ Negating windows are bounded by punctuation, known limiting tokens or a user-specified maximum window size.
 
  More about NegEx:
  http://rods.health.pitt.edu/LIBRARY/NLP%20Papers/chapman_JBI_2001_negation.pdf
@@ -20,6 +19,7 @@ NEG_PSEUDO = [
     'no wonder',
     'no change',
     'not only',
+    'not just'
     'not necessarily',
     'cannot describe'
 ]
@@ -33,7 +33,8 @@ NEG_PRENEGATION = [
     'declined',
     'denied', 'denies', 'deny',
     'free of',
-    'fails to', 'failed to',
+    'lack of',
+    'fails to', 'failed to', 'fail to'
     'no evidence',
     'no sign',
     'no suspicious',
@@ -44,27 +45,30 @@ NEG_PRENEGATION = [
     'without',
     'rules out', 'ruled out', 'rule out',
     'isn',
-    'hadn',
-    'wasn',
-    'weren',
+    'hadnt', 'hadn\'t'
+    'wasnt', 'wasn\'t'
+    'werent', 'weren\'t'
     'neither', 'nor',
-    'didn',
-    'don', 'dont',
-    'won', 'wont',
-    '\'t',
+    'dont', 'don\'t',
+    'didnt', 'didn\'t'
+    'wont', 'won\'t'
     'reject', 'rejects', 'rejected',
-    'refuse', 'refused', 'refuses',
+    'refuse to', 'refused to', 'refuses to',
     'dismiss', 'dismissed', 'dismisses',
     'couldn', 'couldnt',
     'doesn', 'doesnt',
     'non', 'nothing',
     'aren', 'arent',
     'none',
-    'anything but'
+    'anything but',
+    'negligible',
+    'unlikely to'
 ]
 
 # pos negating terms - modifies what came before
-NEG_POSNEGATION = ['unlikely',
+# experiment - currently disabled
+NEG_POSNEGATION = [
+    'unlikely',
     'ruled out',
     'refused',
     'rejected',
@@ -76,31 +80,69 @@ NEG_POSNEGATION = ['unlikely',
     'shot down']
 
 NEG_ENDOFWINDOW = [
-    '.', ':', ',', ')', '!', ';', '?'
-    'but', 'however', 'nevertheless', 'yet', 'though', 'although',
-    'still', 'aside from', 'except', 'apart from'
+    '.', ':', ';', ',', ')', '!', ';', '?', ']',
+    'but', 
+    'however', 
+    'nevertheless', 
+    'yet',
+    'though', 'although',
+    'still', 
+    'aside from', 
+    'except', 
+    'apart from', 
+    'because', 
+    'unless',
+    'therefore'
 ]
 
-#
-# populates array of negated terms based on document terms
-# negation[i] indicates if term in doc[i] is negated
-#
-def getNegationArray(doc, windowsize, debugmode=False):
+def getNegationArray(doc, windowsize, debugmode=False, postag=True):
     '''
       NegEx-based negation detection algorithm for text.
       Receives a POS-tagged document in list form and size of negating window. A POS-tagged document takes the form:
-        
-         the/DT hype/NN and/CC is/VBZ a/DT very/RB seductive/JJ
-
-      or:
-        
-        the_DT hype_NN and_CC is_VBZ a_DT very_RB seductive_JJ
+      
+         Do_VBP n't_RB tell_VB her_PRP who_WP I_PRP am_VBP seeing_VBG
 
       Returns array A where A[i] indicates whether this position in the document has been negated by an expression (1), or not (0).
+
+      Arguments
+      ---------
+         doc        - input doc as *list* of tokens, with or w/out part of speech
+         windowsize - the default cut off window size that limits the scope of a negation.
+         debugmode  - prints more stuff
+         postag     - True/False, whether input document has been POS-tagged 
     '''
 
     def debug(msg):
         if debugmode: print '[getNegationArray] - %s' % msg
+
+    def get_pos_separator(doc):
+        '''
+         given a list of tokens "guesses" the part of speech separator based on first tokens
+        '''
+        docsize=len(doc)
+        if docsize>0 and re.search('[/_]', doc[0]):
+            separator = doc[0][re.search('[/_]', doc[0]).start()]
+        elif docsize>1 and re.search('[/_]', doc[1]):
+            # second try
+            separator = doc[1][re.search('[/_]', doc[1]).start()]
+        elif separator not in '_/':
+            debug('Warning. Could not find a separator from input. Using "_"')
+            separator = '_'
+        return separator
+
+    def get_next_ngram(doc, docsize, position, n, postag, separator):
+        '''
+         Returns next n-gram from document, stripping part of speech.
+         If position+n is larger than doc lenght, returns smallest n-gram that fits end of document.
+        '''
+        grams = []
+        for igram in range(n):
+            if position < (docsize - igram):
+                if postag:
+                    grams.append(doc[position + igram].split(separator)[0])
+                else:
+                    grams.append(doc[position + igram])
+        return ' '.join(grams).lower()
 
     # check input is a list
     assert type(doc) is list, 'Input document must be a list of POS-tagged tokens'
@@ -115,26 +157,12 @@ def getNegationArray(doc, windowsize, debugmode=False):
     found_neg_fwd = False
     found_neg_bck = False
     inwindow = 0
-
-    # detect POS separator from 1st token. Use '_' if none found
     separator = '_'
-    if docsize>0 and re.search('[/_]', doc[0]):
-        separator = doc[0][re.search('[/_]', doc[0]).start()]
-    elif docsize>1 and re.search('[/_]', doc[1]):
-        # second try
-        separator = doc[1][re.search('[/_]', doc[1]).start()]
-    elif separator not in '_/':
-        debug('Warning. Could not find a separator from input. Using "_"')
-        separator = '_'
+    if postag: separator = get_pos_separator(doc)
 
     for i in range(docsize):
-        # Build 1-term and 2-term strings.
-        unigram = doc[i].split(separator)[0]
-        bigram = ''
-        if i < (docsize - 1):
-            bigram = ' '.join([unigram, doc[i+1].split(separator)[0]])
-        else:
-            bigram = unigram
+        unigram = get_next_ngram(doc, docsize, i, 1, postag, separator)
+        bigram = get_next_ngram(doc, docsize, i, 2, postag, separator)
 
         # Search for pseudo negations
         if bigram in NEG_PSEUDO:
@@ -160,18 +188,10 @@ def getNegationArray(doc, windowsize, debugmode=False):
                 found_neg_fwd = False
                 inwindow = 0
 
-        # backward negation
-        if found_neg_bck:
-            # negate back until window start
-            for counter in range(max(winstart, i-windowsize), i):
-                vNEG[counter] = 1
-            # done with backwards negation
-            found_neg_bck = False
-
         # now move window
         if (unigram in NEG_ENDOFWINDOW) or (bigram in NEG_ENDOFWINDOW):
             # found end of negation, must reset window and negation state
-            debug('End of negating window at %d, %s.' % (i, bigram))
+            debug('End of negating window at %d, %s.' % (i, unigram))
             inwindow = 0
             found_neg_fwd = False
             winstart = i

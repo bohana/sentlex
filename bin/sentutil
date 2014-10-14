@@ -4,16 +4,10 @@
  Classify input document using sentlex library
 '''
 
-import sentanalysis as sentdoc
+import sentlex.sentanalysis as sentdoc
 import sentlex
 from optparse import OptionParser
-
-################
-##
-## MAIN
-##
-################
-
+import sys
 
 def main():
     # grab parameters
@@ -26,10 +20,12 @@ def main():
                            help="Input document is not POS-tagged (POS tagging will run before classification)")
     (options, args) = mainparser.parse_args()
     # instantiate selected lexicon
-    L = sentlex.MobyLexicon()
-    print '...loaded %s' % L.getName()
+    L = sentlex.SWN3Lexicon()
+    print '...loaded %s' % L.get_name()
     # open document
-    assert options.inputfile, 'Must give an input file to analyze. Use --file'
+    if not options.inputfile:
+        print 'Must give an input file to analyze. Use --file'
+        sys.exit(1)
     f = open(options.inputfile)
     doc = f.read()
     # run analyzer, print output
@@ -40,8 +36,7 @@ def main():
     result = ds.classify_document(doc, verbose=options.verbose, tagged=(not options.not_tagged))
     print 'Input: %s' % options.inputfile
     print 'Classification Results (Pos,Neg): (%2.2f, %2.2f)' % (result[0], result[1])
-    if options.verbose:
-        print '\n' + ds.resultdata.get('annotated_doc')
+    print '\n' + ds.resultdata.get('annotated_doc')
 
 if (__name__ == "__main__"):
     main()
