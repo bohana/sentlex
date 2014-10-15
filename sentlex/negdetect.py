@@ -1,20 +1,30 @@
 '''
- An implementation of the NegEx algorithm for negation detection in a document.
+  An negation detection algorithm based on known negation markers. This implementation is inspired by the NegEx algorithm (Chapman et al 2001)
 
- Negex works by scanning for known explicit negating markers in the form of unigrams and bigrams.
- A found pattern triggers a negated 'window' of specific size in tokens.
- Anything within a negated window is considered a negated sentence.
- Negating windows are bounded by punctuation, known limiting tokens or a user-specified maximum window size.
+  It works by scanning for known explicit negating markers in the form of unigrams and bigrams.
+  A found pattern triggers a negated 'window' of specific size in tokens.
+  Anything within a negated window is considered a negated sentence.
+  Negating windows are bounded by punctuation, known limiting tokens or a user-specified maximum window size.
 
- More about NegEx:
- http://rods.health.pitt.edu/LIBRARY/NLP%20Papers/chapman_JBI_2001_negation.pdf
+  About NegEx:
+ 
+      Chapman, Wendy W., et al. 
+      "A simple algorithm for identifying negated findings and diseases in discharge summaries." 
+      Journal of biomedical informatics 34.5 (2001): 301-310.
 
- This implementation adds a few more tokens to the original implementation from Chapman et al.
+      http://rods.health.pitt.edu/LIBRARY/NLP%20Papers/chapman_JBI_2001_negation.pdf
+
+  The tokens used in this algorithm were extended based on experimentation and the list described on:
+
+      Councill, Isaac G., Ryan McDonald, and Leonid Velikovich. 
+      "What's great and what's not: learning to classify the scope of negation for improved sentiment analysis." 
+      Proceedings of the workshop on negation and speculation in natural language processing. Association for Computational Linguistics, 2010.
+  
 '''
 import re
 
 # Pseudo-negations - to be ignored by the algorithm
-NEG_PSEUDO = [
+NEG_PSEUDO = set([
     'no increase',
     'no wonder',
     'no change',
@@ -22,18 +32,18 @@ NEG_PSEUDO = [
     'not just'
     'not necessarily',
     'cannot describe'
-]
+])
 
 # Pre-negating terms - negate what follows
-NEG_PRENEGATION = [
+NEG_PRENEGATION = set([
     'not',
     'no',
     'n\'t',
-    'cannot',
+    'cannot', 'cant', 'can\'t',
     'declined',
     'denied', 'denies', 'deny',
     'free of',
-    'lack of',
+    'lack of', 'lacks', 'lacking',
     'fails to', 'failed to', 'fail to'
     'no evidence',
     'no sign',
@@ -44,30 +54,38 @@ NEG_PRENEGATION = [
     'unremarkable',
     'without',
     'rules out', 'ruled out', 'rule out',
-    'isn',
-    'hadnt', 'hadn\'t'
-    'wasnt', 'wasn\'t'
-    'werent', 'weren\'t'
+    'isn', 'isnt', 'isn\'t', 'aint', 'ain\'t'
+    'hadnt', 'hadn\'t',
+    'wasnt', 'wasn\'t',
+    'werent', 'weren\'t',
+    'havent', 'haven\'t',
+    'wouldnt', 'wouldn\'t',
+    'havnt',
+    'shant',
     'neither', 'nor',
     'dont', 'don\'t',
     'didnt', 'didn\'t'
     'wont', 'won\'t'
+    'darent', 'daren\'t',
+    'shouldnt', 'shouln\'t',
     'reject', 'rejects', 'rejected',
     'refuse to', 'refused to', 'refuses to',
     'dismiss', 'dismissed', 'dismisses',
-    'couldn', 'couldnt',
-    'doesn', 'doesnt',
+    'couldn', 'couldnt', 'couldn\'t'
+    'doesn', 'doesnt', 'doesn\'t',
     'non', 'nothing',
-    'aren', 'arent',
+    'nobody',
+    'nowhere',
+    'aren', 'arent', 'aren\'t',
     'none',
     'anything but',
     'negligible',
     'unlikely to'
-]
+])
 
 # pos negating terms - modifies what came before
 # experiment - currently disabled
-NEG_POSNEGATION = [
+NEG_POSNEGATION = set([
     'unlikely',
     'ruled out',
     'refused',
@@ -77,9 +95,9 @@ NEG_POSNEGATION = [
     'false',
     'untrue',
     'unremarkable',
-    'shot down']
+    'shot down'])
 
-NEG_ENDOFWINDOW = [
+NEG_ENDOFWINDOW = set([
     '.', ':', ';', ',', ')', '!', ';', '?', ']',
     'but', 
     'however', 
@@ -93,7 +111,7 @@ NEG_ENDOFWINDOW = [
     'because', 
     'unless',
     'therefore'
-]
+])
 
 def getNegationArray(doc, windowsize, debugmode=False, postag=True):
     '''

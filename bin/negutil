@@ -1,0 +1,50 @@
+#! /bin/env python
+
+'''
+ Classify input document using sentlex library
+'''
+
+import sentlex.negdetect as negdetect
+from optparse import OptionParser
+import sys
+import nltk
+
+def main():
+    # grab parameters
+    mainparser = OptionParser()
+    mainparser.add_option("--file", action="store", type="string", default=None, dest="inputfile",
+                           help="Input document to analyze.")
+    mainparser.add_option("--verbose", action="store_true", default=False, dest="verbose",
+                           help="Tell everything")
+    mainparser.add_option("--postag", action="store_true", default=False, dest="tagged",
+                           help="Input document is not POS-tagged (POS tagging will run before classification)")
+    mainparser.add_option("--window", action="store", default=False, dest="window",
+                           help="Input document is not POS-tagged (POS tagging will run before classification)")
+    (options, args) = mainparser.parse_args()
+
+    # open document
+    if not options.inputfile:
+        print 'Must give an input file to analyze. Use --file'
+        sys.exit(1)
+    f = open(options.inputfile)
+    doc = f.read()
+    doc = nltk.tokenize.WordPunctTokenizer().tokenize(doc)
+
+    # run negation detection
+    neg_array = negdetect.getNegationArray(doc, int(options.window), debugmode=options.verbose, postag=options.tagged)
+
+    # prints output with negation markers
+    negated=False
+    for i in range(len(doc)):
+        if neg_array[i]==1 and (not negated): 
+            print '[[ ',
+            negated=True
+        if neg_array[i]==0 and negated:
+            print ' ]]',
+            negated=False
+        print doc[i],
+    if negated: print ' ]]'
+    print '\n *** '
+
+if (__name__ == "__main__"):
+    main()

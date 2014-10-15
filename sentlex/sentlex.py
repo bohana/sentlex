@@ -138,45 +138,45 @@ class Lexicon(object):
         Compares current lexicon with "L" on "pos" part of speech ('a','v','n','r')
       '''
       def getsign(x):
-         if x > 0.0:
-             return 1
-         elif x == 0.0:
-             return 0
-         else:
-             return -1
+          if x > 0.0:
+              return 1
+          elif x == 0.0:
+              return 0
+          else:
+              return -1
 
       if pos == 'a':
-        lComp = self.A
+          lComp = self.A
       elif pos == 'v':
-        lComp = self.V
+          lComp = self.V
       elif pos == 'n':
-        lComp = self.N
+          lComp = self.N
       elif pos == 'r':
-        lComp = self.R
+          lComp = self.R
 
       # Intersection
       I = []
       for term in lComp:
-        if (pos == 'a' and L.hasadjective(term))\
-           or (pos == 'v' and L.hasverb(term))\
-           or (pos == 'r' and L.hasadverb(term))\
-           or (pos == 'n' and L.hasnoun(term)):
-          I.append(term)
+          if (pos == 'a' and L.hasadjective(term))\
+             or (pos == 'v' and L.hasverb(term))\
+             or (pos == 'r' and L.hasadverb(term))\
+             or (pos == 'n' and L.hasnoun(term)):
+              I.append(term)
 
-      print " POS = "+pos+". Intersection of " + self.LexName + " and " + L.getName() + " -> " + str(len(I))
+      print " POS = "+pos+". Intersection of " + self.LexName + " and " + L.get_name() + " -> " + str(len(I))
 
       # % Agreement between lexicons - we consider terms in agreement if overall valence (positive-negative) is of same sign.
       agree = 0.0
       for term in I:
-        if    (pos == 'a' and (getsign( L.getadjective(term)[0] - L.getadjective(term)[1]) == getsign( self.getadjective(term)[0] - self.getadjective(term)[1]))) \
-           or (pos == 'v' and (getsign( L.getverb(term)[0] - L.getverb(term)[1]) == getsign( self.getverb(term)[0] - self.getverb(term)[1]))) \
-           or (pos == 'r' and (getsign( L.getadverb(term)[0] - L.getadverb(term)[1]) == getsign( self.getadverb(term)[0] - self.getadverb(term)[1]))) \
-           or (pos == 'n' and (getsign( L.getnoun(term)[0] - L.getnoun(term)[1]) == getsign( self.getnoun(term)[0] - self.getnoun(term)[1]))):
-          agree = agree+1
+          if (pos == 'a' and (getsign(L.getadjective(term)[0] - L.getadjective(term)[1]) == getsign(self.getadjective(term)[0] - self.getadjective(term)[1])))\
+           or (pos == 'v' and (getsign(L.getverb(term)[0] - L.getverb(term)[1]) == getsign(self.getverb(term)[0] - self.getverb(term)[1])))\
+           or (pos == 'r' and (getsign(L.getadverb(term)[0] - L.getadverb(term)[1]) == getsign(self.getadverb(term)[0] - self.getadverb(term)[1])))\
+           or (pos == 'n' and (getsign(L.getnoun(term)[0] - L.getnoun(term)[1]) == getsign(self.getnoun(term)[0] - self.getnoun(term)[1]))):
+              agree = agree+1
 
       if I:
-        print " POS = "+pos+". % Agreement on (" + self.LexName + ") Intersec. (" + L.getName() + ") -> " + str( agree / (len(I)+0.0) )
-        return {'intersect':len(I), 'agree': agree / (len(I)+0.0)}
+          print " POS = "+pos+". % Agreement on ("+self.LexName+") Intersec. ("+L.get_name()+") -> "+str(agree/(len(I)+0.0))
+          return {'intersect':len(I), 'agree': agree/(len(I)+0.0)}
 
 
     def getbestvalues(self, key, A):
@@ -234,7 +234,7 @@ class Lexicon(object):
         '''
           Print scores for a list of standard terms for QA, we use only adjectives for now.
         '''
-        print self.getName()
+        print self.get_name()
         for adj in self.baselinewords:
             print " %s (%.2f,%.2f) " % (adj, self.getadjective(adj)[0], self.getadjective(adj)[1]),
         print '\n'
@@ -339,7 +339,7 @@ class CompositeLexicon(Lexicon):
 
     def add_lexicon(self, L):
         self.LLIST.append(L)
-        self.LexName += " " + L.getName()
+        self.LexName += " " + L.get_name()
 
     def set_factor(newval):
         '''
@@ -458,5 +458,5 @@ class UICLexicon(ResourceLexicon):
     def __init__(self):
         curpath = os.path.dirname(os.path.abspath(__file__))
         datapath = os.path.join(curpath, 'data/uic.lex')
-        super(SWN3Lexicon,self).__init__('UIC', sentlexutil.readUIC)
+        super(UICLexicon,self).__init__('UIC', sentlexutil.readUIC)
         self.load(datapath)

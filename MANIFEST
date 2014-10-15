@@ -17,6 +17,7 @@ sentlex/stopwords.py
 sentlex/data/GB1_S.lex
 sentlex/data/SentiWordNet_3.0.0.lex
 sentlex/data/objective.txt
+sentlex/data/uic.lex
 sentlex/tests/__init__.py
 sentlex/tests/unittest_docscore.py
 sentlex/tests/unittest_docscore_potts.py

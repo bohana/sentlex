@@ -194,12 +194,12 @@ def readUIC(postag, datafile=None):
     '''
     A={}
     if not datafile: return None
-    f = open(datafule,'r')
+    f = open(datafile,'r')
     for line in f:
         # get tokens
         # input file is in format: 
         #  [pos|neg],word,pos
-        items = line.split(',')
+        items = line.replace('\n','').split(',')
         termpos = items[2]
         valence = items[0]
         word = items[1]
