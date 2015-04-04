@@ -15,6 +15,7 @@ sentlex/sentlex.py
 sentlex/sentlexutil.py
 sentlex/stopwords.py
 sentlex/data/GB1_S.lex
+sentlex/data/SUBTLEXus.txt
 sentlex/data/SentiWordNet_3.0.0.lex
 sentlex/data/objective.txt
 sentlex/data/uic.lex

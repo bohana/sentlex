@@ -34,7 +34,8 @@ class T0_parameter_setting(unittest.TestCase):
         ds = sentdoc.BasicDocSentiScore()
         ds.verbose=True
 
-        ds.set_neg_detection(True, 15)
+        ds.set_parameters(negation=True)
+        ds.set_parameters(negation_window=15)
         ds.set_active_pos(True, False, False, False)
 
         self.assertEqual((ds.a, ds.v, ds.n, ds.r), (True, False, False, False), 'Failed set POS parameters')
@@ -64,7 +65,7 @@ class T1_scoring_documents(unittest.TestCase):
         self.assertEqual(ds._detect_tag(TESTDOC_ADJ), '/', 'Unable to detect correct separator')
 
         # now score!
-        (dpos, dneg) = ds.classify_document(TESTDOC_ADJ, verbose=True)
+        (dpos, dneg) = ds.classify_document(TESTDOC_ADJ)
         self.assertTrue(ds.resultdata and ds.resultdata.has_key('doc') and ds.resultdata.has_key('annotated_doc')\
             and ds.resultdata.has_key('resultpos') and ds.resultdata.has_key('resultneg'), 'Did not populate resultdata after scoring doc')
 
@@ -72,19 +73,16 @@ class T1_scoring_documents(unittest.TestCase):
         print 'TESTDOC_ADJ (pos,neg): %2.2f %2.2f' % (dpos, dneg)
 
         # again, for negative text
-        (dpos, dneg) = ds.classify_document(TESTDOC_BADADJ, verbose=True)
+        (dpos, dneg) = ds.classify_document(TESTDOC_BADADJ)
         self.assertTrue(dneg > dpos, 'Did not find negative words on negative doc')
         print 'TESTDOC_BADADJ (pos,neg): %2.2f %2.2f' % (dpos, dneg)
 
         # negated text
-        ds.set_neg_detection(True, 5)
-        (dpos, dneg) = ds.classify_document(TESTDOC_NEGATED, verbose=True)
+        ds.set_parameters(negation=True)
+        ds.set_parameters(negation_window=15)
+        (dpos, dneg) = ds.classify_document(TESTDOC_NEGATED)
         self.assertTrue(dpos > dneg, 'Did not find positive words on TESTDOC_NEGATED')
         print 'TESTDOC_NEGATED (pos,neg): %2.2f %2.2f' % (dpos, dneg)
-
-        # currupt data - should still work
-        (dpos, dneg) = ds.classify_document(TESTDOC_CORRUPT, verbose=True)
-        self.assertTrue(dpos > dneg, 'Did not process corrupt document correctly')
 
 class T2_scoring_untagged(unittest.TestCase):
     def runTest(self):

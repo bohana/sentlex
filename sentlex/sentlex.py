@@ -15,7 +15,6 @@ TODO:
 
 import os
 import nltk
-from nltk.corpus import brown
 import sentlexutil
 
 
@@ -212,23 +211,41 @@ class Lexicon(object):
 
     def compile_frequency(self):
         '''
-          Generate corpus based frequency distribution for terms in this lexicon.
-          We use NLTK's brown corpus of (potentially) opinionated articles as our source data.
+          Pre load frequency table data for using with get_freq() calls.
+          Frequency data comes from the SUBTLEXus study, available from:
+          http://expsy.ugent.be/subtlexus/
         '''
-        # Load corpus
-        # Mar-14 - extending to entire brown corpus for better coverage
-        BC = brown.words()
+        # load frequency list
+        curpath = os.path.dirname(os.path.abspath(__file__))
+        datapath = os.path.join(curpath, 'data/SUBTLEXus.txt')
+        # build frequency table, ignoring upercase/lowercase differences
+        f = open(datapath, 'r')
+        self.LexFreq = {}
+        for line in f.readlines():
+            # in LexFreq we record absolute counts
+            rec = line.split('\t')
+            word = rec[0]
+            wordfreq = rec[1]
+            if word and wordfreq.isdigit():
+                if word in self.LexFreq:
+                    self.LexFreq[word] += float(wordfreq)
+                else:
+                    self.LexFreq[word] = float(wordfreq)
 
-        # Build freq dist only for terms found in lexicon
-        self.LexFreq = nltk.FreqDist([t.lower() for t in BC if (self.hasnoun(t) or self.hasverb(t) or self.hasadverb(t) or self.hasadjective(t))])
+        self.corpus_size = 51000000.0
+        f.close()
         self.is_compiled = True
 
     def get_freq(self, term):
         '''
-          Retrieves term's *relative* frequency in relation to lexicon's most frequent term as obtained from Brown corpus data
+          Retrieves word frequency based on SUBTLEXus corpus data. 
+          Word frequency is given by count(w)/corpus size
         '''
         assert self.LexFreq, "Please initialize frequency distributions with compileFrequency()"
-        return self.LexFreq.freq(term)/self.LexFreq.freq(self.LexFreq.max())
+        if term in self.LexFreq:
+            return self.LexFreq[term]/self.corpus_size
+        else:
+            return 0.0
 
     def printstdterms(self):
         '''

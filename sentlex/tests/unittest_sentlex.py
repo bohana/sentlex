@@ -57,19 +57,6 @@ class T3_multiplelexicons(unittest.TestCase):
         self.assertEqual(L2.get_name(), 'UnitTest2', 'Something weird with lexicon instantiation.')
         self.assertEqual(L1.get_name(), 'UnitTest1', 'Something weird with lexicon instantiation.')
 
-# Morph lexicon
-class T_morpho(unittest.TestCase):
-   def runTest(self):
-      M = sentlex.MorphLexicon()
-      M.load()
-      t = M.getadjective('belated')
-      t2 = M.getadjective('disproportionate')
-      t3 = M.getadjective('professional')
-
-      self.assertTrue(t[1] > 0.0, 'Failed morph this word')
-      self.assertTrue(t2[1] > 0.0, 'Failed morph this word')
-      self.assertTrue(t3[0] > 0.0, 'Failed morph this word')
-
 #
 # Runs unit testing if module is called directly
 #

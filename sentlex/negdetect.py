@@ -137,16 +137,12 @@ def getNegationArray(doc, windowsize, debugmode=False, postag=True):
         '''
          given a list of tokens "guesses" the part of speech separator based on first tokens
         '''
-        docsize=len(doc)
-        if docsize>0 and re.search('[/_]', doc[0]):
-            separator = doc[0][re.search('[/_]', doc[0]).start()]
-        elif docsize>1 and re.search('[/_]', doc[1]):
-            # second try
-            separator = doc[1][re.search('[/_]', doc[1]).start()]
-        elif separator not in '_/':
-            debug('Warning. Could not find a separator from input. Using "_"')
-            separator = '_'
-        return separator
+        for i in xrange(min(2,len(doc))):
+            if '_' in doc[i]:
+                return '_'
+            elif '/' in doc[i]:
+                return '/'
+        return '_'
 
     def get_next_ngram(doc, docsize, position, n, postag, separator):
         '''
@@ -169,18 +165,25 @@ def getNegationArray(doc, windowsize, debugmode=False, postag=True):
     vNEG = [0 for t in range(len(doc))]
     # Initialise window counters
     winstart = 0
-    docsize = len(doc)
     i = 0
     found_pseudo = False
     found_neg_fwd = False
     found_neg_bck = False
     inwindow = 0
     separator = '_'
-    if postag: separator = get_pos_separator(doc)
+    if postag: 
+        separator = get_pos_separator(doc)
+        untagged_doc = [w.split(separator)[0] for w in doc]
+    else:
+        untagged_doc = doc
 
-    for i in range(docsize):
-        unigram = get_next_ngram(doc, docsize, i, 1, postag, separator)
-        bigram = get_next_ngram(doc, docsize, i, 2, postag, separator)
+    docsize = len(untagged_doc)
+    for i in xrange(docsize):
+        unigram = untagged_doc[i]
+        if i < (docsize - 1):
+            bigram = unigram + ' ' + untagged_doc[i+1]
+        else:
+            bigram = unigram
 
         # Search for pseudo negations
         if bigram in NEG_PSEUDO:

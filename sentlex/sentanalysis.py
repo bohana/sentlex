@@ -32,7 +32,9 @@ class DocSentiScore(object):
         self.objectiveWords = stopwords.Stopword()
         # default configuration
         self.set_active_pos(True, True, False, False)
-        self.set_neg_detection(True)
+        self.negation = True
+        self.negation_window = 5
+        self.negated_term_adj = 0.0
         self.L = None
         self.verbose = False
         self.resultdata = {}
@@ -124,16 +126,10 @@ class BasicDocSentiScore(DocSentiScore):
         self.score_stop = False
         self.score_function = self._score_noop
         self.negated_term_adj = 0.0
+        self.freq_weight = 1.0
         # Setup stem preprocessing for verbs
         self.wnl = nltk.stem.WordNetLemmatizer()
-
-    def set_neg_detection(self, mode, window=5, negated_adj=0.0):
-        '''
-         Enable negation detection for this algorithm
-        '''
-        self.negation = mode
-        self.negation_window = window
-        self.negated_term_adj = negated_adj
+        self.lemma_cache = {}
 
     def set_active_pos(self, a=True, v=True, n=False, r=False):
         '''
@@ -189,9 +185,10 @@ class BasicDocSentiScore(DocSentiScore):
             negval = self.score_function(scoretuple[negindex], i, doclen)
             if self.score_freq:
                 # Scoring with frequency information
-                # Frequency is a real valued at 0.0-1.0. We calculate sqrt function so that the value grows faster even for numbers close to 0 
-                posval *= 1.0 - max(math.sqrt(self.L.get_freq(thisword)), 0.25)
-                negval *= 1.0 - max(math.sqrt(self.L.get_freq(thisword)), 0.25)
+                ##posval *= 1.0 - max(math.sqrt(self.L.get_freq(thisword)), 0.25)
+                ##negval *= 1.0 - max(math.sqrt(self.L.get_freq(thisword)), 0.25)
+                posval = self._freq_adjust(posval, self.L.get_freq(thisword))
+                negval = self._freq_adjust(negval, self.L.get_freq(thisword))
             self._debug('[_get_word_contribution] word %s (%s) at %d-th place on docsize %d is eligible (%2.2f, %2.2f).' % (thisword, str(scoretuple), i, doclen, posval, negval))
 
         return (posval, negval)
@@ -203,12 +200,35 @@ class BasicDocSentiScore(DocSentiScore):
         '''
         return (posval, negval)
 
+    def _freq_adjust(self, score, p):
+        '''
+          Adjust contribution of a word score based on frequency information given by the formula for self-information:
+            I(x) = -log(p(x))
+          Where p(x) is estimated based on a word frequency list.
+
+          The frequency is also weight-adjusted according to freq_weight ( 0.0..1.0, defaults to 1.0)
+        '''
+        smooth = 0.00000001 # add a smoothing factor for not known words
+        I = -1 * math.log(p + smooth, 2)
+        return (score * (1 - self.freq_weight)) + (score * I * (self.freq_weight))
 
     def _reset_runtime_vars(self):
         self.vNEG = []
         self.resultdata = {}
         self.tag_counter = collections.Counter()
 
+
+    def _lemmatize_verb(self, word):
+        '''
+         Returns lemma of a given word, if verb
+        '''
+        # first query local cache in case this lemma already exists
+        if word in self.lemma_cache:
+            return self.lemma_cache[word]
+        else:
+            lemma = self.wnl.lemmatize(word, pos='v')
+            if lemma: self.lemma_cache[word] = lemma
+            return lemma
 
     def classify_document(self, Doc, tagged=True, verbose=False, **kwargs):
         '''
@@ -236,7 +256,7 @@ class BasicDocSentiScore(DocSentiScore):
         else:
             tagged_doc = Doc
         tagsep = self._detect_tag(tagged_doc)
-        assert tagsep, 'Unable to detect tag separator'
+        assert tagsep, 'Unable to detect tag separator: ' + Doc[:100]
 
         # ready to start - reset runtime vars
         self._reset_runtime_vars()
@@ -276,7 +296,7 @@ class BasicDocSentiScore(DocSentiScore):
             # Verbs (VBP / VBD/ etc...)
             if self.v and re.search('(VB|VB.)$', thistag):
                 tagfound = True
-                thislemma = self.wnl.lemmatize(thisword, pos='v')
+                thislemma = self._lemmatize_verb(thisword)
                 scoretuple = self.L.getverb(thislemma)
           
             # Adverbs
@@ -355,14 +375,17 @@ class BasicDocSentiScore(DocSentiScore):
         self.set_active_pos(a=tags['a'], v=tags['v'], n=tags['n'], r=tags['r'])
 
         # Negation
+        if 'negation_window' in kwargs.keys():
+            window = kwargs['negation_window']
+            self.negation_window = window
+            self.negation = True
+        if 'negation_adjustment' in kwargs.keys():
+            adj = kwargs['negation_adjustment']
+            self.negated_ter_adj = adj
         if 'negation' in kwargs.keys():
-            window = 0
-            adj = 0.0
-            if 'negation_window' in kwargs.keys(): window = kwargs['negation_window']
-            if 'negation_adjustment' in kwargs.keys(): adj = kwargs['negation_adjustment']
-            self.set_neg_detection(kwargs['negation'], window, adj)
+            negation_mode = kwargs['negation']
+            self.negation = negation_mode
 
-        #TODO: this needs stronger validation
         if kwargs.has_key('score_mode'): self.score_mode = kwargs['score_mode']
         if kwargs.has_key('score_freq'): self.score_freq = kwargs['score_freq']
         if kwargs.has_key('score_stop'): self.score_stop = kwargs['score_stop']
@@ -372,6 +395,9 @@ class BasicDocSentiScore(DocSentiScore):
                 self.score_function = getattr(self, '_score_'+kwargs['score_function'])
             except Exception:
                 self.score_function = self._score_noop
+
+        if kwargs.has_key('freq_weight'):
+            self.freq_weight = float(kwargs['freq_weight'])
 
     #
     # score weight adjustment functions

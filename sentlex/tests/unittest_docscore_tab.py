@@ -72,7 +72,6 @@ class T1_scoring_documents(unittest.TestCase):
         print 'TESTDOC_BADADJ (pos,neg): %2.2f %2.2f' % (dpos, dneg)
 
         # negated text
-        ds.set_neg_detection(True, 5)
         (dpos, dneg) = ds.classify_document(TESTDOC_NEGATED, verbose=True)
         print 'TESTDOC_NEGATED (pos,neg): %2.2f %2.2f' % (dpos, dneg)
 

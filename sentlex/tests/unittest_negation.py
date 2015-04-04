@@ -20,7 +20,6 @@ STR_DOUBLE = 'this/DT example/DT does/DT not/DT mean/DT there/DT are/DT no/DT ne
 STR_PSEUDO = 'not/DT only/DT this/DT example/DT contains/DT a/DT double/DT ./DT it/DT is/DT no/DT wonder/DT language/DT is/DT a/DT problem/DT ./DT'
 STR_WINDOW = 'with/DT no/DT certainty/DT this/DT will/DT negate/DT as/DT far/DT as/DT the/DT window/DT allows/DT'
 STR_OTHERTAG = 'in_DT this_DT example_DT nothing_DT means_DT the_DT algorithm_DT still_DT works_DT'
-STR_BACK = 'my_DT claim_NN of_DT happiness_NN was_VB refused_VB'
 
 # T0 - Edge cases
 class T0_edgecases(unittest.TestCase):
@@ -57,10 +56,6 @@ class T1_negationalgo(unittest.TestCase):
         A = neg.getNegationArray(STR_OTHERTAG.split(), 4, True)
         self.assertTrue(sum(A)>0, 'Negation algo failed on STR_OTHERTAG')
         
-        # backwards
-        A = neg.getNegationArray(STR_BACK.split(), 4, True)
-        self.assertTrue(sum(A)>0, 'Negation algo failed on STR_BACK')
-
 # T2 - window
 class T2_negationwindow(unittest.TestCase):
     def runTest(self):
