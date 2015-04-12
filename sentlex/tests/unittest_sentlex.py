@@ -40,6 +40,19 @@ class T2_freqdist(unittest.TestCase):
         self.assertTrue(L.get_freq('good') > 0, 'Frq dist looks broken')
         self.assertTrue(L.get_freq('notawordnowayjosay') == 0.0, 'Freq found a non existent word')
 
+class T21_freqdist(unittest.TestCase):
+    def runTest(self):
+        L = sentlex.SWN3Lexicon()
+        L.compile_frequency()
+
+        baseline = [ ('bad', 0.0005451764705882353),
+                     ('good', 0.002610137254901961),
+                     ('the', 0.029449176470588236),
+                     ('want', 0.0027591764705882354)]
+
+        for (w,f) in baseline:
+            self.assertTrue(L.get_freq(w) == f, 'Incorrect freq found for %s (%.8f <> %.8f)' % (w, f, L.get_freq(w)))
+
 # T3. Multiple lexicons
 class T3_multiplelexicons(unittest.TestCase):
     def runTest(self):

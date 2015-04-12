@@ -64,7 +64,6 @@ class T2_negationwindow(unittest.TestCase):
         for i in range(1,6):
             A = neg.getNegationArray(STR_WINDOW.split(), i, False)
             negatedsums.append(sum(A))
-        print str(negatedsums)
         for i in range(4):
             self.assertTrue(negatedsums[i] < negatedsums[i+1], 'Something wrong with window size %d'%i)
 

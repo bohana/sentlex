@@ -206,11 +206,16 @@ class BasicDocSentiScore(DocSentiScore):
             I(x) = -log(p(x))
           Where p(x) is estimated based on a word frequency list.
 
-          The frequency is also weight-adjusted according to freq_weight ( 0.0..1.0, defaults to 1.0)
+          The frequency is also weight-adjusted according to freq_weight ( 0.0..1.0, defaults to 1.0) using the formula:
+            score = (weight * I(x)) + (1 - weight)
+
         '''
-        smooth = 0.00000001 # add a smoothing factor for not known words
-        I = -1 * math.log(p + smooth, 2)
-        return (score * (1 - self.freq_weight)) + (score * I * (self.freq_weight))
+        # unknown words get a mid-range value
+        if p == 0.0:
+           p = 0.0005
+
+        I = -1 * math.log(p, 2)
+        return score * ((1 - self.freq_weight) + (I * (self.freq_weight)))
 
     def _reset_runtime_vars(self):
         self.vNEG = []

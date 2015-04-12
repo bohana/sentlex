@@ -221,8 +221,8 @@ class Lexicon(object):
         # build frequency table, ignoring upercase/lowercase differences
         f = open(datapath, 'r')
         self.LexFreq = {}
+        # first we read raw counts, then estimate prob. of ocurrences
         for line in f.readlines():
-            # in LexFreq we record absolute counts
             rec = line.split('\t')
             word = rec[0]
             wordfreq = rec[1]
@@ -232,8 +232,12 @@ class Lexicon(object):
                 else:
                     self.LexFreq[word] = float(wordfreq)
 
-        self.corpus_size = 51000000.0
         f.close()
+        # estimate probabilities
+        CORPUS_SIZE = 51000000.0
+        for w in self.LexFreq:
+            self.LexFreq[w] = self.LexFreq[w]/CORPUS_SIZE
+
         self.is_compiled = True
 
     def get_freq(self, term):
@@ -241,9 +245,9 @@ class Lexicon(object):
           Retrieves word frequency based on SUBTLEXus corpus data. 
           Word frequency is given by count(w)/corpus size
         '''
-        assert self.LexFreq, "Please initialize frequency distributions with compileFrequency()"
+        assert self.LexFreq and self.is_compiled, "Please initialize frequency distributions with compile_frequency()"
         if term in self.LexFreq:
-            return self.LexFreq[term]/self.corpus_size
+            return self.LexFreq[term]
         else:
             return 0.0
 
