@@ -36,29 +36,26 @@ class T1_scoring_documents(unittest.TestCase):
 
         # create a class that scores only adjectives
         ds=sentdoc.SentenceDocSentiScore(L)
-        ds.verbose=True
+        ds.verbose=False
         ds.set_lexicon(L)
 
         # now score!
-        (dpos, dneg) = ds.classify_document(TESTDOC_ADJ, verbose=True)
+        (dpos, dneg) = ds.classify_document(TESTDOC_ADJ, verbose=False)
         self.assertTrue(ds.resultdata and ds.resultdata.has_key('doc') and ds.resultdata.has_key('annotated_doc')\
             and ds.resultdata.has_key('resultpos') and ds.resultdata.has_key('resultneg'), 'Did not populate resultdata after scoring doc')
 
-        print 'TESTDOC_ADJ (pos,neg): %2.2f %2.2f' % (dpos, dneg)
         self.assertTrue(dpos > 0.0, 'Did not find positive words on positive doc')
 
         # again, for negative text
-        (dpos, dneg) = ds.classify_document(TESTDOC_BADADJ, verbose=True)
-        print 'TESTDOC_BADADJ (pos,neg): %2.2f %2.2f' % (dpos, dneg)
+        (dpos, dneg) = ds.classify_document(TESTDOC_BADADJ, verbose=False)
         self.assertTrue(dneg > 0.0, 'Did not find negative words on negative doc')
 
         # negated text
-        (dpos, dneg) = ds.classify_document(TESTDOC_NEGATED, verbose=True)
-        print 'TESTDOC_NEGATED (pos,neg): %2.2f %2.2f' % (dpos, dneg)
+        (dpos, dneg) = ds.classify_document(TESTDOC_NEGATED, verbose=False)
         self.assertTrue(dpos > 0.0, 'Did not find positive words on TESTDOC_NEGATED')
 
         # currupt data - should still work
-        (dpos, dneg) = ds.classify_document(TESTDOC_CORRUPT, verbose=True)
+        (dpos, dneg) = ds.classify_document(TESTDOC_CORRUPT, verbose=False)
 
 
 class T4_large_docs(unittest.TestCase):
@@ -68,12 +65,11 @@ class T4_large_docs(unittest.TestCase):
         self.assertTrue(L.is_loaded, 'Test lexicon did not load correctly')
         algo=sentdoc.SentenceDocSentiScore(L)
         for doc in [LARGE1]:
-            (p,n) = algo.classify_document(doc, verbose=True)
+            (p,n) = algo.classify_document(doc, verbose=False)
 
 #
 # Runs unit testing if module is called directly
 #
 if __name__ == "__main__":
-    
    # Run those guys
    unittest.main()

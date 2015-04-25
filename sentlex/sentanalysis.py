@@ -120,6 +120,7 @@ class BasicDocSentiScore(DocSentiScore):
         # Constants driving term-counting behavior 
         self.SCOREALL = 0
         self.SCOREONCE = 1
+        self.SCOREBACKOFF = 2
         # default configuration for Basic
         self.score_mode = self.SCOREALL
         self.score_freq = False
@@ -127,6 +128,7 @@ class BasicDocSentiScore(DocSentiScore):
         self.score_function = self._score_noop
         self.negated_term_adj = 0.0
         self.freq_weight = 1.0
+        self.backoff_alpha = 0.0
         # Setup stem preprocessing for verbs
         self.wnl = nltk.stem.WordNetLemmatizer()
         self.lemma_cache = {}
@@ -185,14 +187,27 @@ class BasicDocSentiScore(DocSentiScore):
             negval = self.score_function(scoretuple[negindex], i, doclen)
             if self.score_freq:
                 # Scoring with frequency information
-                ##posval *= 1.0 - max(math.sqrt(self.L.get_freq(thisword)), 0.25)
-                ##negval *= 1.0 - max(math.sqrt(self.L.get_freq(thisword)), 0.25)
                 posval = self._freq_adjust(posval, self.L.get_freq(thisword))
                 negval = self._freq_adjust(negval, self.L.get_freq(thisword))
+
+            if self.score_mode == self.SCOREBACKOFF:
+                # when backoff is enabled we apply exponential backoff to the word contribution
+                posval = self._repeated_backoff(posval, self.tag_counter(tagword), self.backoff_alpha)
+                negval = self._repeated_backoff(negval, self.tag_counter(tagword), self.backoff_alpha)
+
             self._debug('[_get_word_contribution] word %s (%s) at %d-th place on docsize %d is eligible (%2.2f, %2.2f).' % (thisword, str(scoretuple), i, doclen, posval, negval))
 
         return (posval, negval)
 
+    def _repeated_backoff(self, val, repeatcount, alpha):
+        '''
+          Adjusts score *val* using exponential backoff and adjustment factor *alpha*
+        '''
+        if repeatcount == 0:
+            # should not be scoring a word that never ocurred
+            return 0.0
+
+        return val * (1.0 / math.pow(2, alpha * (repeatcount - 1)))
 
     def _doc_score_adjust(self, posval, negval):
         '''
@@ -235,7 +250,7 @@ class BasicDocSentiScore(DocSentiScore):
             if lemma: self.lemma_cache[word] = lemma
             return lemma
 
-    def classify_document(self, Doc, tagged=True, verbose=False, **kwargs):
+    def classify_document(self, Doc, tagged=True, verbose=False, annotations=False, **kwargs):
         '''
          Performs lexicon-based sentiment classification of input document.
          Doc is a POS-tagged document, which can optionally be tagged on-the-fly when tagged=False.
@@ -333,9 +348,12 @@ class BasicDocSentiScore(DocSentiScore):
                     negtag = str(self.vNEG[i-1])
                 else:
                     negtag = 'NONEG'
-                annotatedTags.append(tagword + '##NEGAT:' + negtag + '##POS:' + str(posval) + '##NEG:' + str(negval))
+
+                if annotations:
+                    annotatedTags.append(tagword + '##NEGAT:' + negtag + '##POS:' + str(posval) + '##NEG:' + str(negval))
             else:
-                annotatedTags.append(tagword)
+                if annotations:
+                    annotatedTags.append(tagword)
 
         # Completed scan - execute final score adjustments
         (resultpos, resultneg) = self._doc_score_adjust(postotal, negtotal)
@@ -396,14 +414,13 @@ class BasicDocSentiScore(DocSentiScore):
         if kwargs.has_key('score_stop'): self.score_stop = kwargs['score_stop']
 
         if kwargs.has_key('score_function'):
-            try:
                 self.score_function = getattr(self, '_score_'+kwargs['score_function'])
-            except Exception:
-                self.score_function = self._score_noop
 
         if kwargs.has_key('freq_weight'):
             self.freq_weight = float(kwargs['freq_weight'])
 
+        if kwargs.has_key('backoff_alpha'):
+            self.backoff_alpha = float(kwargs['backoff_alpha'])
     #
     # score weight adjustment functions
     #
@@ -424,19 +441,6 @@ class BasicDocSentiScore(DocSentiScore):
             return score
         else:
             return score*(((float(i)/float(N))*BAND)+FLOOR)
-
-    def _score_cosine(self, score, i, N):
-        '''
-         cosine adjustment gives a heavier weight to scores at the start and end of document
-        '''
-        if N==0: return score
-        BAND=0.5
-        # normalize word position
-        norm_i = float(i)/float(N)
-        # get cosine function, ranging from 0.5-1.0
-        cos_val = BAND+((math.cos(20.0*norm_i/math.pi)+1.0)/4.0)
-        return score*cos_val
-
 
 #
 # Sample Pre-defined algorithms based on BasicDocSentiScore

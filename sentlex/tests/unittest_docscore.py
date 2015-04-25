@@ -32,7 +32,7 @@ class T0_parameter_setting(unittest.TestCase):
     def runTest(self):
         # empty list
         ds = sentdoc.BasicDocSentiScore()
-        ds.verbose=True
+        ds.verbose=False
 
         ds.set_parameters(negation=True)
         ds.set_parameters(negation_window=15)
@@ -42,7 +42,6 @@ class T0_parameter_setting(unittest.TestCase):
         self.assertEqual((ds.negation, ds.negation_window), (True, 15), 'Failed set negation')
 
         ds.set_parameters(score_mode=ds.SCOREONCE, score_freq=True, negation=False)
-        print ds.score_mode, ds.score_freq, ds.negation
         self.assertEqual(ds.score_mode, ds.SCOREONCE, 'Unable to set parameters via kwards')
         self.assertEqual(ds.score_freq, True, 'Unable to set parameters via kwards')
         self.assertEqual(ds.negation, False, 'Unable to set parameters via kwards')
@@ -56,7 +55,7 @@ class T1_scoring_documents(unittest.TestCase):
 
         # create a class that scores only adjectives
         ds = sentdoc.BasicDocSentiScore()
-        ds.verbose=True
+        ds.verbose=False
         ds.set_active_pos(True, False, False, False)
         ds.set_parameters(score_mode=ds.SCOREALL, score_freq=False, negation=False)
         ds.set_lexicon(L)
@@ -70,19 +69,16 @@ class T1_scoring_documents(unittest.TestCase):
             and ds.resultdata.has_key('resultpos') and ds.resultdata.has_key('resultneg'), 'Did not populate resultdata after scoring doc')
 
         self.assertTrue(dpos > dneg, 'Did not find positive words on positive doc')
-        print 'TESTDOC_ADJ (pos,neg): %2.2f %2.2f' % (dpos, dneg)
 
         # again, for negative text
         (dpos, dneg) = ds.classify_document(TESTDOC_BADADJ)
         self.assertTrue(dneg > dpos, 'Did not find negative words on negative doc')
-        print 'TESTDOC_BADADJ (pos,neg): %2.2f %2.2f' % (dpos, dneg)
 
         # negated text
         ds.set_parameters(negation=True)
         ds.set_parameters(negation_window=15)
         (dpos, dneg) = ds.classify_document(TESTDOC_NEGATED)
         self.assertTrue(dpos > dneg, 'Did not find positive words on TESTDOC_NEGATED')
-        print 'TESTDOC_NEGATED (pos,neg): %2.2f %2.2f' % (dpos, dneg)
 
 class T2_scoring_untagged(unittest.TestCase):
     def runTest(self):
@@ -92,19 +88,19 @@ class T2_scoring_untagged(unittest.TestCase):
 
         # create a class that scores only adjectives
         ds = sentdoc.BasicDocSentiScore()
-        ds.verbose=True
+        ds.verbose=False
         ds.set_active_pos(True, True, False, False)
         ds.set_lexicon(L)
 
         # score untagged doc - this should cause an exception
-        self.assertRaises(AssertionError, ds.classify_document, TESTDOC_UNTAGGED, verbose=True)
+        self.assertRaises(AssertionError, ds.classify_document, TESTDOC_UNTAGGED, verbose=False)
 
         # this should work
-        (dpos, dneg) = ds.classify_document(TESTDOC_UNTAGGED, verbose=True, tagged=False)
+        (dpos, dneg) = ds.classify_document(TESTDOC_UNTAGGED, verbose=False, tagged=False)
         self.assertTrue(dpos>0, 'Did not score "good" in untagged doc')
 
         # score again, now changing all tags to false
-        (dpos, dneg) = ds.classify_document(TESTDOC_UNTAGGED, verbose=True, tagged=False, a=False, v=False, n=False, r=False)
+        (dpos, dneg) = ds.classify_document(TESTDOC_UNTAGGED, verbose=False, tagged=False, a=False, v=False, n=False, r=False)
         self.assertTrue(dpos==0 and dneg==0, 'Scprng with no active tags should not happen')
 
 class T3_scoring_functions(unittest.TestCase):
@@ -114,37 +110,26 @@ class T3_scoring_functions(unittest.TestCase):
         self.assertTrue(L.is_loaded, 'Test lexicon did not load correctly')
 
         ds = sentdoc.BasicDocSentiScore()
-        ds.verbose=True
+        ds.verbose=False
         ds.set_active_pos(True, True, False, False)
         ds.set_lexicon(L)
-        print '=== cosine ==='
-        ds.set_parameters(score_function='cosine')
-        (dpos, dneg) = ds.classify_document(TESTDOC_ADJ, verbose=True)
-        print '=== linear ==='
         ds.set_parameters(score_function='linear')
-        (dpos, dneg) = ds.classify_document(TESTDOC_ADJ, verbose=True)
-        for i in range(1,11):
-            print ds._score_cosine(1.0, i, 10),
-        print '\nLinear'
-        for i in range(1,11):
-            print ds._score_linear(1.0, i, 10),
+        (dpos, dneg) = ds.classify_document(TESTDOC_ADJ, verbose=False)
 
 class T4_sample_classes(unittest.TestCase):
     def runTest(self):
         # load lexicon
         L = sentlex.MobyLexicon()
         self.assertTrue(L.is_loaded, 'Test lexicon did not load correctly')
-        print '=== Testing all sample algorithms==='
         for algo in [ sentdoc.AV_AllWordsDocSentiScore(L), 
                       sentdoc.A_AllWordsDocSentiScore(L),
                       sentdoc.A_OnceWordsDocSentiScore(L),
                       sentdoc.AV_OnceWordsDocSentiScore(L),
                       sentdoc.AV_Lin_AllWordsDocSentiScore(L),
-                      sentdoc.A_Lin_AllWordsDocSentiScore(L),
-                      sentdoc.A_Cos_AllWordsDocSentiScore(L),
-                      sentdoc.AV_Cos_AllWordsDocSentiScore(L)]:
-            algo.verbose=True
-            (p,n) = algo.classify_document(TESTDOC_ADJ, verbose=True)
+                      sentdoc.A_Lin_AllWordsDocSentiScore(L)
+                    ]:
+            algo.verbose=False
+            (p,n) = algo.classify_document(TESTDOC_ADJ, verbose=False)
             self.assertTrue(p>n, 'Sample document not scored correctly in %s' % str(algo.__class__))
 
 #

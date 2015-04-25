@@ -32,7 +32,7 @@ class T0_parameter_setting(unittest.TestCase):
     def runTest(self):
         # empty list
         ds = sentdoc.TaboadaDocSentiScore()
-        ds.verbose=True
+        ds.verbose=False
 
         ds.set_active_pos(True, False, False, False)
         ds.set_parameters(negation_shift=0.5, negation=True, negation_window=15)
@@ -50,7 +50,7 @@ class T1_scoring_documents(unittest.TestCase):
 
         # create a class that scores only adjectives
         ds = sentdoc.TaboadaDocSentiScore()
-        ds.verbose=True
+        ds.verbose=False
         ds.set_active_pos(True, False, False, False)
         ds.set_parameters(score_freq=False, negation=True, negation_shift=0.5)
         ds.set_lexicon(L)
@@ -59,24 +59,21 @@ class T1_scoring_documents(unittest.TestCase):
         self.assertEqual(ds._detect_tag(TESTDOC_ADJ), '/', 'Unable to detect correct separator')
 
         # now score!
-        (dpos, dneg) = ds.classify_document(TESTDOC_ADJ, verbose=True)
+        (dpos, dneg) = ds.classify_document(TESTDOC_ADJ, verbose=False)
         self.assertTrue(ds.resultdata and ds.resultdata.has_key('doc') and ds.resultdata.has_key('annotated_doc')\
             and ds.resultdata.has_key('resultpos') and ds.resultdata.has_key('resultneg'), 'Did not populate resultdata after scoring doc')
 
         self.assertTrue(dpos > 0.0, 'Did not find positive words on positive doc')
-        print 'TESTDOC_ADJ (pos,neg): %2.2f %2.2f' % (dpos, dneg)
 
         # again, for negative text
-        (dpos, dneg) = ds.classify_document(TESTDOC_BADADJ, verbose=True)
+        (dpos, dneg) = ds.classify_document(TESTDOC_BADADJ, verbose=False)
         self.assertTrue(dneg > 0.0, 'Did not find negative words on negative doc')
-        print 'TESTDOC_BADADJ (pos,neg): %2.2f %2.2f' % (dpos, dneg)
 
         # negated text
-        (dpos, dneg) = ds.classify_document(TESTDOC_NEGATED, verbose=True)
-        print 'TESTDOC_NEGATED (pos,neg): %2.2f %2.2f' % (dpos, dneg)
+        (dpos, dneg) = ds.classify_document(TESTDOC_NEGATED, verbose=False)
 
         # currupt data - should still work
-        (dpos, dneg) = ds.classify_document(TESTDOC_CORRUPT, verbose=True)
+        (dpos, dneg) = ds.classify_document(TESTDOC_CORRUPT, verbose=False)
         self.assertTrue(dpos > dneg, 'Did not process corrupt document correctly')
 
 
@@ -85,13 +82,11 @@ class T4_sample_classes(unittest.TestCase):
         # load lexicon
         L = sentlex.MobyLexicon()
         self.assertTrue(L.is_loaded, 'Test lexicon did not load correctly')
-        print '=== Testing all sample algorithms==='
         for algo in [ sentdoc.AV_LightTabSentiScore(L), 
                       sentdoc.AV_AggressiveTabSentiScore(L),
                     ]:
-            algo.verbose=True
-            print ' ==> ' + str(algo.__class__)
-            (p,n) = algo.classify_document(TESTDOC_NEGATED, verbose=True)
+            algo.verbose=False
+            (p,n) = algo.classify_document(TESTDOC_NEGATED, verbose=False)
 
 #
 # Runs unit testing if module is called directly
