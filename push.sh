@@ -1,4 +1,8 @@
-rm /halshare/python/hub/sentlex/dist/*.gz
-python /halshare/python/hub/sentlex/setup.py sdist
-ver=`cat setup.py |grep version|cut -d'=' -f2|sed s/\'//g|sed s/,//`
-easy_install -v file:/halshare/python/hub/sentlex/dist/SentLex-$ver.tar.gz
+echo "Building"
+rm dist/*gz
+python setup.py sdist
+pip install --upgrade --force-reinstall --no-deps dist/*gz
+
+echo "Testing"
+cd sentlex/tests
+python -m unittest discover -v -p "unit*.py"

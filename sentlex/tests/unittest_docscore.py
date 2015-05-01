@@ -128,8 +128,9 @@ class T4_sample_classes(unittest.TestCase):
                       sentdoc.AV_Lin_AllWordsDocSentiScore(L),
                       sentdoc.A_Lin_AllWordsDocSentiScore(L)
                     ]:
-            algo.verbose=False
-            (p,n) = algo.classify_document(TESTDOC_ADJ, verbose=False)
+            algo.verbose=True
+            (p,n) = algo.classify_document(TESTDOC_ADJ, verbose=True)
+            print p,n
             self.assertTrue(p>n, 'Sample document not scored correctly in %s' % str(algo.__class__))
 
 #

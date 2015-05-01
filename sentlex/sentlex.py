@@ -38,12 +38,20 @@ class Lexicon(object):
         self.N = {}
         self.LexName = 'Superclass'
         self.LexFreq = None
-        self.is_loaded = False
-        self.is_compiled = False
+        self._is_loaded = False
+        self._is_compiled = False
         #  Baseline words used to QA a lexicon
         self.baselinewords = ['good', 'bad', 'pretty', 'awful', 'excellent',
                              'misfortune', 'incompetent', 'tough',
                              'inadequate', 'terrible', 'blue', 'closed']
+
+    @property
+    def is_loaded(self):
+        return self._is_loaded
+
+    @property
+    def is_compiled(self):
+        return self._is_compiled
 
     def _termdistro(self,A):
         '''
@@ -238,7 +246,7 @@ class Lexicon(object):
         for w in self.LexFreq:
             self.LexFreq[w] = self.LexFreq[w]/CORPUS_SIZE
 
-        self.is_compiled = True
+        self._is_compiled = True
 
     def get_freq(self, term):
         '''
@@ -300,7 +308,7 @@ class ResourceLexicon(Lexicon):
         self.R = self.f_loader('r',datafile)
         self.N = self.f_loader('n',datafile)
         self.compile_frequency()
-        self.is_loaded = True
+        self._is_loaded = True
         return True
 
     def getadjective(self,term):
@@ -354,19 +362,35 @@ class CompositeLexicon(Lexicon):
 
     def __init__(self):
         super(CompositeLexicon,self).__init__()
-        self.LexName = "Composite"
+        self.LexName = 'Composite'
         self.LLIST=[]
         self.factor = 1.0
 
     def add_lexicon(self, L):
         self.LLIST.append(L)
-        self.LexName += " " + L.get_name()
+        self.LexName += ' ' + L.get_name()
 
-    def set_factor(newval):
+    def set_factor(self, newval):
         '''
          updates confidence factor used when looking for values over the lexicon list
         '''
         self.factor = newval
+
+    def compile_frequency(self):
+        for L in self.LLIST:
+            L.compile_frequency()
+
+        if self.LLIST:
+            # frequencies are independent of lexicon content so we use the first one
+            self.LexFreq = self.LLIST[0].LexFreq
+
+    @property
+    def is_compiled(self):
+        return (all([L.is_compiled for L in self.LLIST]) and self.LexFreq)
+
+    @property
+    def is_loaded(self):
+        return all([L.is_loaded for L in self.LLIST])
 
     def _scan_lexlist_val(self, lexlist, term, f_checker, f_getter, notfound_val):
         '''
@@ -375,12 +399,12 @@ class CompositeLexicon(Lexicon):
          notfound_cal is returned if no lexicons contain term (as per checker func)
          At each iteration, confidence is decremeted by self.factor
         '''
-        confidence_val=1.0 
+        confidence_val = 1.0
         for L in lexlist:
             if getattr(L, f_checker)(term): 
-                termval=getattr(L, f_getter)(term)
+                termval = getattr(L, f_getter)(term)
                 # return found values for this term, times the lexicon confidence
-                return (termval[0]*confidence_val, termval[1]*confidence_val)
+                return (termval[0] * confidence_val, termval[1] * confidence_val)
             confidence_val *= self.factor
         return notfound_val 
             

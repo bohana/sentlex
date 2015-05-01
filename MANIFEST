@@ -21,9 +21,12 @@ sentlex/data/objective.txt
 sentlex/data/uic.lex
 sentlex/tests/__init__.py
 sentlex/tests/unittest_docscore.py
+sentlex/tests/unittest_docscore_adjustments.py
+sentlex/tests/unittest_docscore_engine.py
 sentlex/tests/unittest_docscore_potts.py
 sentlex/tests/unittest_docscore_sentences.py
 sentlex/tests/unittest_docscore_tab.py
 sentlex/tests/unittest_negation.py
 sentlex/tests/unittest_sentlex.py
+sentlex/tests/unittest_sentlex_comp.py
 sentlex/tests/unittest_stop.py

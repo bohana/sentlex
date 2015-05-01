@@ -129,6 +129,8 @@ class BasicDocSentiScore(DocSentiScore):
         self.negated_term_adj = 0.0
         self.freq_weight = 1.0
         self.backoff_alpha = 0.0
+        self.a_adjust = 1.0
+        self.v_adjust = 1.0
         # Setup stem preprocessing for verbs
         self.wnl = nltk.stem.WordNetLemmatizer()
         self.lemma_cache = {}
@@ -170,12 +172,10 @@ class BasicDocSentiScore(DocSentiScore):
             posindex = 0
             negindex = 1
 
-        # self.SCOREALL: counts all word ocurrences
-        # self.SCOREONCE: counts each word/POS combination only once. Keeps track in self.tag_counter
         if (
              (
-              (self.score_mode == self.SCOREALL) or 
-              (self.score_mode == self.SCOREONCE and (tagword not in self.tag_counter))
+              (self.score_mode == self.SCOREALL) or (self.score_mode == self.SCOREBACKOFF) or
+              (self.score_mode == self.SCOREONCE and (self.tag_counter[tagword] == 1))
              )
              and
              ( 
@@ -192,8 +192,8 @@ class BasicDocSentiScore(DocSentiScore):
 
             if self.score_mode == self.SCOREBACKOFF:
                 # when backoff is enabled we apply exponential backoff to the word contribution
-                posval = self._repeated_backoff(posval, self.tag_counter(tagword), self.backoff_alpha)
-                negval = self._repeated_backoff(negval, self.tag_counter(tagword), self.backoff_alpha)
+                posval = self._repeated_backoff(posval, self.tag_counter[tagword], self.backoff_alpha)
+                negval = self._repeated_backoff(negval, self.tag_counter[tagword], self.backoff_alpha)
 
             self._debug('[_get_word_contribution] word %s (%s) at %d-th place on docsize %d is eligible (%2.2f, %2.2f).' % (thisword, str(scoretuple), i, doclen, posval, negval))
 
@@ -311,13 +311,13 @@ class BasicDocSentiScore(DocSentiScore):
             # Adjectives 
             if self.a and re.search('(JJ|JJ.)$', thistag):
                 tagfound = True
-                scoretuple = self.L.getadjective(thisword)
+                scoretuple = [self.a_adjust * x for x in self.L.getadjective(thisword)]
 
             # Verbs (VBP / VBD/ etc...)
             if self.v and re.search('(VB|VB.)$', thistag):
                 tagfound = True
                 thislemma = self._lemmatize_verb(thisword)
-                scoretuple = self.L.getverb(thislemma)
+                scoretuple = [self.v_adjust * x for x in self.L.getverb(thislemma)]
           
             # Adverbs
             if self.r and re.search('RB$', thistag):
@@ -333,13 +333,12 @@ class BasicDocSentiScore(DocSentiScore):
             # Add this word contribution to total
             #
             if tagfound:
+                self.tag_counter.update([tagword])
                 (posval, negval) = self._get_word_contribution(thisword, tagword, scoretuple, i, doclen)
                 postotal += posval
                 negtotal += negval
                 self._debug('Running total (pos,neg): %2.2f, %2.2f'%(postotal,negtotal))
 
-                # Found a tag - increase counters and add tag to list
-                self.tag_counter.update([tagword])
                 if scoretuple == (0,0): tagUnscored.append(tagword)
                 foundcounter += 1
                 if self.negation and self.vNEG[i-1]==1:
@@ -421,6 +420,11 @@ class BasicDocSentiScore(DocSentiScore):
 
         if kwargs.has_key('backoff_alpha'):
             self.backoff_alpha = float(kwargs['backoff_alpha'])
+        
+        if kwargs.has_key('a_adjust'):
+            self.a_adjust = float(kwargs['a_adjust'])
+        if kwargs.has_key('v_adjust'):
+            self.v_adjust = float(kwargs['v_adjust'])
     #
     # score weight adjustment functions
     #
