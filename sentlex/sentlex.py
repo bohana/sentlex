@@ -365,6 +365,8 @@ class CompositeLexicon(Lexicon):
         self.LexName = 'Composite'
         self.LLIST=[]
         self.factor = 1.0
+        self.pos_bias = 1.0
+        self.neg_bias = 1.0
 
     def add_lexicon(self, L):
         self.LLIST.append(L)
@@ -375,6 +377,14 @@ class CompositeLexicon(Lexicon):
          updates confidence factor used when looking for values over the lexicon list
         '''
         self.factor = newval
+
+    def set_bias(self, pos, neg):
+        '''
+         Numeric values determining how to adjust positive/negative sentiment.
+         These values apply to 2nd lexicon onwards
+        '''
+        self.pos_bias = pos
+        self.neg_bias = neg
 
     def compile_frequency(self):
         for L in self.LLIST:
@@ -400,12 +410,16 @@ class CompositeLexicon(Lexicon):
          At each iteration, confidence is decremeted by self.factor
         '''
         confidence_val = 1.0
+        pos_bias = 1.0
+        neg_bias = 1.0
         for L in lexlist:
             if getattr(L, f_checker)(term): 
                 termval = getattr(L, f_getter)(term)
                 # return found values for this term, times the lexicon confidence
-                return (termval[0] * confidence_val, termval[1] * confidence_val)
+                return (termval[0] * confidence_val * pos_bias, termval[1] * confidence_val * neg_bias)
             confidence_val *= self.factor
+            pos_bias *= self.pos_bias
+            neg_bias *= self.neg_bias
         return notfound_val 
             
     def _scan_lexlist_presence(self, lexlist, term, f_checker):
