@@ -410,16 +410,12 @@ class CompositeLexicon(Lexicon):
          At each iteration, confidence is decremeted by self.factor
         '''
         confidence_val = 1.0
-        pos_bias = 1.0
-        neg_bias = 1.0
         for L in lexlist:
             if getattr(L, f_checker)(term): 
                 termval = getattr(L, f_getter)(term)
                 # return found values for this term, times the lexicon confidence
-                return (termval[0] * confidence_val * pos_bias, termval[1] * confidence_val * neg_bias)
+                return (termval[0] * confidence_val * self.pos_bias, termval[1] * confidence_val * self.neg_bias)
             confidence_val *= self.factor
-            pos_bias *= self.pos_bias
-            neg_bias *= self.neg_bias
         return notfound_val 
             
     def _scan_lexlist_presence(self, lexlist, term, f_checker):
