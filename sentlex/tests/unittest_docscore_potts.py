@@ -44,6 +44,28 @@ class T0_parameter_setting(unittest.TestCase):
         self.assertEqual(ds.score_mode, ds.SCOREONCE, 'Unable to set parameters via kwards')
         self.assertEqual(ds.score_freq, True, 'Unable to set parameters via kwards')
 
+class T_atenuation_setting(unittest.TestCase):
+    def runTest(self):
+        # empty list
+        ds = sentdoc.PottsDocSentiScore()
+        L = sentlex.MobyLexicon()
+        ds.verbose=True
+        ds.set_lexicon(L)
+
+        negated_sent = 'not/DT good/JJ'  
+
+        ds.set_active_pos(True, False, False, False)
+        ds.set_parameters(negation=True, negation_window=15)
+        (dpos, dneg) = ds.classify_document(negated_sent)
+        self.assertTrue(dneg > dpos, 'Negation did not invert scores.')
+
+        ds.set_parameters(negation=True, negation_window=15, atenuation=True, at_pos=0.5, at_neg=0.5)
+        (dpos, dneg) = ds.classify_document(negated_sent)
+        ds.set_parameters(negation=True, negation_window=15, atenuation=True, at_pos=1.0, at_neg=1.0)
+        (dposfull, dnegfull) = ds.classify_document(negated_sent)
+        self.assertTrue(dpos > dneg, 'Negation did not atenuate scores.')
+        self.assertTrue(dposfull > dpos, 'Negation did not atenuate scores.')
+
 
 class T1_scoring_documents(unittest.TestCase):
     def runTest(self):

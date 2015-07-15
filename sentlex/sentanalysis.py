@@ -131,6 +131,9 @@ class BasicDocSentiScore(DocSentiScore):
         self.backoff_alpha = 0.0
         self.a_adjust = 1.0
         self.v_adjust = 1.0
+        self.atenuation = False
+        self.at_pos = 1.0
+        self.at_neg = 1.0
         # Setup stem preprocessing for verbs
         self.wnl = nltk.stem.WordNetLemmatizer()
         self.lemma_cache = {}
@@ -165,7 +168,7 @@ class BasicDocSentiScore(DocSentiScore):
         posval = 0.0
         negval = 0.0
         # Negation detection: flip indexes for pos/neg values if negated word
-        if self.negation:
+        if self.negation and not self.atenuation:
             posindex = self.vNEG[i-1]
             negindex = (1+self.vNEG[i-1])%2
         else:
@@ -185,6 +188,11 @@ class BasicDocSentiScore(DocSentiScore):
            ):
             posval = self.score_function(scoretuple[posindex], i, doclen)
             negval = self.score_function(scoretuple[negindex], i, doclen)
+            if self.atenuation and self.vNEG[i-1]:
+                # lowers score val when inside a negated window and atenuation is enabled
+                posval *= self.at_pos
+                negval *= self.at_neg
+
             if self.score_freq:
                 # Scoring with frequency information
                 posval = self._freq_adjust(posval, self.L.get_freq(thisword))
@@ -405,15 +413,22 @@ class BasicDocSentiScore(DocSentiScore):
             adj = kwargs['negation_adjustment']
             self.negated_ter_adj = adj
         if 'negation' in kwargs.keys():
-            negation_mode = kwargs['negation']
-            self.negation = negation_mode
+            self.negation = kwargs['negation']
+        if 'atenuation' in kwargs.keys():
+            self.negation = True
+            self.atenuation = kwargs['atenuation']
+
+        if 'at_pos' in kwargs.keys():
+            self.at_pos = float(kwargs['at_pos'])
+        if 'at_neg' in kwargs.keys():
+            self.at_neg = float(kwargs['at_neg'])
 
         if kwargs.has_key('score_mode'): self.score_mode = kwargs['score_mode']
         if kwargs.has_key('score_freq'): self.score_freq = kwargs['score_freq']
         if kwargs.has_key('score_stop'): self.score_stop = kwargs['score_stop']
 
         if kwargs.has_key('score_function'):
-                self.score_function = getattr(self, '_score_'+kwargs['score_function'])
+            self.score_function = getattr(self, '_score_'+kwargs['score_function'])
 
         if kwargs.has_key('freq_weight'):
             self.freq_weight = float(kwargs['freq_weight'])

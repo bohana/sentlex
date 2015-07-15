@@ -99,6 +99,7 @@ class SentenceDocSentiScore(DocSentiScore):
         for (sentence, sent_sz) in tagged_sentences:
             try:
                 self._debug('[sent classifier] %s' % sentence)
+                self.sentence_classifier.set_lexicon(self.L)
                 (cur_pos, cur_neg) = self.sentence_classifier.classify_document(sentence, tagged=True, verbose=verbose)
 
                 # adjust for question
