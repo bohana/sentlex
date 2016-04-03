@@ -8,35 +8,44 @@ import sentlex.sentanalysis as sentdoc
 import sentlex
 from optparse import OptionParser
 import sys
+import os
+
 
 def main():
     # grab parameters
     mainparser = OptionParser()
     mainparser.add_option("--file", action="store", type="string", default=None, dest="inputfile",
                            help="Input document to analyze.")
+    mainparser.add_option("--dir", action="store", type="string", default=None, dest="inputdir",
+                           help="Input directory with files to analyze.")
     mainparser.add_option("--verbose", action="store_true", default=False, dest="verbose",
                            help="Tell everything")
     mainparser.add_option("--notag", action="store_true", default=False, dest="not_tagged",
                            help="Input document is not POS-tagged (POS tagging will run before classification)")
     (options, args) = mainparser.parse_args()
-    # instantiate selected lexicon
-    L = sentlex.SWN3Lexicon()
-    print '...loaded %s' % L.get_name()
-    # open document
-    if not options.inputfile:
-        print 'Must give an input file to analyze. Use --file'
+    
+    if not options.inputfile and not options.inputdir:
+        print 'Must give an input file to analyze. Use --file or --dir.'
         sys.exit(1)
-    f = open(options.inputfile)
-    doc = f.read()
-    # run analyzer, print output
+
+    files = []
+    if options.inputfile:
+        files = options.inputfile
+    elif options.inputdir:
+        files = [os.path.join(options.inputdir, x) for x in os.listdir(options.inputdir)]
+    
+    # instantiate selected lexicon and setup classifier
+    L = sentlex.SWN3Lexicon()
     ds = sentdoc.BasicDocSentiScore()
     ds.set_active_pos(True, True, False, False)
     ds.set_parameters(score_mode=ds.SCOREALL, score_freq=True, negation=True, negation_window=5)
     ds.set_lexicon(L)
-    result = ds.classify_document(doc, verbose=options.verbose, tagged=(not options.not_tagged))
-    print 'Input: %s' % options.inputfile
-    print 'Classification Results (Pos,Neg): (%2.2f, %2.2f)' % (result[0], result[1])
-    print '\n' + ds.resultdata.get('annotated_doc')
+
+    for f in files:
+        doc = open(f).read()
+        result = ds.classify_document(doc, verbose=options.verbose, tagged=(not options.not_tagged))
+        print('{}, {}, {}'.format(f, result[0], result[1]))
+
 
 if (__name__ == "__main__"):
     main()
