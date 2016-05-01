@@ -1,5 +1,7 @@
+from __future__ import absolute_import
 import sentlex
-import sys,os
+import sys
+import os
 import unittest
 
 #####
@@ -7,9 +9,12 @@ import unittest
 # Unit Testing for sentlex
 #
 ####
- 
+
 # T0 - test all basic methods
+
+
 class T0_generic(unittest.TestCase):
+
     def runTest(self):
         L = sentlex.MobyLexicon()
         L.set_name('UnitTest')
@@ -21,8 +26,8 @@ class T0_generic(unittest.TestCase):
         self.assertEqual(L.hasadjective('excellent'), True, 'Wheres the word excellent??')
         self.assertEqual(L.hasadjective('notaword'), False, 'Found non existant word. Weird...')
         # good and bad are seeds to Moby
-        self.assertEqual(L.getadjective('good'), (1.0,0.0), 'Value for term good <> 1')
-        self.assertEqual(L.getadjective('bad'), (0.0,1.0), 'Value for term <> 0')
+        self.assertEqual(L.getadjective('good'), (1.0, 0.0), 'Value for term good <> 1')
+        self.assertEqual(L.getadjective('bad'), (0.0, 1.0), 'Value for term <> 0')
 
         # get_info
         self.assertTrue(L.get_info()['a']['size'] > 0, 'get_info failed for a.')
@@ -30,7 +35,9 @@ class T0_generic(unittest.TestCase):
         self.assertTrue(L.get_info()['v']['size'] > 0, 'get_info failed for v.')
         self.assertTrue(L.get_info()['r']['size'] > 0, 'get_info failed for r.')
 
+
 class T2_freqdist(unittest.TestCase):
+
     def runTest(self):
         L = sentlex.MobyLexicon()
         L.compile_frequency()
@@ -40,21 +47,27 @@ class T2_freqdist(unittest.TestCase):
         self.assertTrue(L.get_freq('good') > 0, 'Frq dist looks broken')
         self.assertTrue(L.get_freq('notawordnowayjosay') == 0.0, 'Freq found a non existent word')
 
+
 class T21_freqdist(unittest.TestCase):
+
     def runTest(self):
         L = sentlex.SWN3Lexicon()
         L.compile_frequency()
 
-        baseline = [ ('bad', 0.0005451764705882353),
-                     ('good', 0.002610137254901961),
-                     ('the', 0.029449176470588236),
-                     ('want', 0.0027591764705882354)]
+        baseline = [('bad', 0.0005451764705882353),
+                    ('good', 0.002610137254901961),
+                    ('the', 0.029449176470588236),
+                    ('want', 0.0027591764705882354)]
 
-        for (w,f) in baseline:
-            self.assertTrue(L.get_freq(w) == f, 'Incorrect freq found for %s (%.8f <> %.8f)' % (w, f, L.get_freq(w)))
+        for (w, f) in baseline:
+            self.assertTrue(L.get_freq(w) == f,
+                            'Incorrect freq found for %s (%.8f <> %.8f)' % (w, f, L.get_freq(w)))
 
 # T3. Multiple lexicons
+
+
 class T3_multiplelexicons(unittest.TestCase):
+
     def runTest(self):
         L1 = sentlex.MobyLexicon()
         L2 = sentlex.MobyLexicon()
@@ -74,6 +87,6 @@ class T3_multiplelexicons(unittest.TestCase):
 # Runs unit testing if module is called directly
 #
 if __name__ == "__main__":
-    
-   # Run those guys
-   unittest.main()
+
+    # Run those guys
+    unittest.main()

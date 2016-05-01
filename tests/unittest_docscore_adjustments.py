@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 try:
     import sentlex.sentanalysis as sentdoc
 except Exception:
@@ -8,7 +9,8 @@ try:
 except Exception:
     import sentlex as sentlex
 
-import sys,os
+import sys
+import os
 import unittest
 
 #####
@@ -20,17 +22,18 @@ import unittest
 #
 # Data
 #
-TESTDOC_ADJ = 'good/JJ hate/VB' 
+TESTDOC_ADJ = 'good/JJ hate/VB'
 
 
 class T0_scoring_functions(unittest.TestCase):
+
     def runTest(self):
         # load lexicon
         L = sentlex.UICLexicon()
         self.assertTrue(L.is_loaded, 'Test lexicon did not load correctly')
 
         ds = sentdoc.BasicDocSentiScore()
-        ds.verbose=False
+        ds.verbose = False
         ds.set_active_pos(True, True, False, False)
         ds.set_lexicon(L)
         ds.set_parameters(a_adjust=1.0, v_adjust=1.0)
@@ -49,6 +52,6 @@ class T0_scoring_functions(unittest.TestCase):
 # Runs unit testing if module is called directly
 #
 if __name__ == "__main__":
-    
-   # Run those guys
-   unittest.main()
+
+    # Run those guys
+    unittest.main()
