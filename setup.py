@@ -8,7 +8,7 @@ setup(
     version='0.1.6_16dev',
     author='Bruno Ohana',
     author_email='bohana@gmail.com',
-    packages=['sentlex', 'sentlex.tests'],
+    packages=['sentlex'],
     package_data={'sentlex': ['data/*.dat', 'data/*.lex', 'data/*.txt']},
     scripts=['bin/sentutil'],
     url='https://github.com/bohana/sentlex',
