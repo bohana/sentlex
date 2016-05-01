@@ -5,11 +5,13 @@
    sentanalysis_sent.py - a sentence-based sentiment classifier
 
 '''
-import sentlex
+from __future__ import absolute_import
+from __future__ import print_function
+from . import sentlex
 import collections
-from docscoreutil import *
-from sentanalysis import DocSentiScore
-from sentanalysis_potts import AV_AggressivePottsSentiScore
+from .docscoreutil import *
+from .sentanalysis import DocSentiScore
+from .sentanalysis_potts import AV_AggressivePottsSentiScore
 
 
 class SentenceDocSentiScore(DocSentiScore):
@@ -18,19 +20,20 @@ class SentenceDocSentiScore(DocSentiScore):
      this approach breaks a document into sentences and generates sentiment scores based on aggregate
      sentiment of each sentence, instead of individual tokens.
     '''
+
     def __init__(self, Lex, classifier_obj=None):
         # calls superclass
         super(DocSentiScore, self).__init__()
         if not classifier_obj:
             # default classifier to be used on sentences
-            self.sentence_classifier=AV_AggressivePottsSentiScore(Lex)
+            self.sentence_classifier = AV_AggressivePottsSentiScore(Lex)
         else:
-            self.sentence_classifier=classifier_obj
+            self.sentence_classifier = classifier_obj
             self.sentence_classifier.set_lexicon(Lex)
 
         self.set_lexicon(Lex)
         self.question_neg_weight = 0.0
-        self.min_question_size = 0.0       
+        self.min_question_size = 0.0
         self.verbose = False
 
     def _sent_tokenize(self, doc, separator):
@@ -39,7 +42,7 @@ class SentenceDocSentiScore(DocSentiScore):
          each containing a sentence from the original document.
         '''
         end_of_sentence = [x + separator + '.' for x in ('.', '!', '?')]
-        
+
         cur_sent = []
         sentences = []
         for token in doc.split(' '):
@@ -100,24 +103,31 @@ class SentenceDocSentiScore(DocSentiScore):
             try:
                 self._debug('[sent classifier] %s' % sentence)
                 self.sentence_classifier.set_lexicon(self.L)
-                (cur_pos, cur_neg) = self.sentence_classifier.classify_document(sentence, tagged=True, verbose=verbose)
+                (cur_pos, cur_neg) = self.sentence_classifier.classify_document(
+                    sentence, tagged=True, verbose=verbose)
 
                 # adjust for question
                 if self._is_question(sentence.split(' ')) and sent_sz > self.min_question_size:
-                    self._debug('[sent classifier] applying adjustment of %.2f to question sentence' % self.question_neg_weight)
+                    self._debug(
+                        '[sent classifier] applying adjustment of %.2f to question sentence' % self.question_neg_weight)
                     cur_neg += self.question_neg_weight
 
                 tot_pos += cur_pos
                 tot_neg += cur_neg
 
                 # update algorithm results
-                self.resultdata['tokens_found'] += self.sentence_classifier.resultdata['tokens_found']
-                self.resultdata['annotated_doc'] += self.sentence_classifier.resultdata['annotated_doc']
-                self.resultdata['tokens_negated'] += self.sentence_classifier.resultdata['tokens_negated']
-                self.resultdata['unscored_list'] += self.sentence_classifier.resultdata['unscored_list']
-                self.resultdata['found_list'].update(self.sentence_classifier.resultdata['found_list'])
-            except Exception, e:
-                print '[sent classifier] - Error processing sentence (%s): %s' % (sentence, str(e))
+                self.resultdata[
+                    'tokens_found'] += self.sentence_classifier.resultdata['tokens_found']
+                self.resultdata[
+                    'annotated_doc'] += self.sentence_classifier.resultdata['annotated_doc']
+                self.resultdata[
+                    'tokens_negated'] += self.sentence_classifier.resultdata['tokens_negated']
+                self.resultdata[
+                    'unscored_list'] += self.sentence_classifier.resultdata['unscored_list']
+                self.resultdata['found_list'].update(
+                    self.sentence_classifier.resultdata['found_list'])
+            except Exception as e:
+                print('[sent classifier] - Error processing sentence (%s): %s' % (sentence, str(e)))
                 raise
 
         self.resultdata['resultpos'] = tot_pos

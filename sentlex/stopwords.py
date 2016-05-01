@@ -6,6 +6,7 @@
   http://nlp.uned.es/~ircourse/examples/stoplist.html
   http://www.lextek.com/manuals/onix/stopwords2.html
 '''
+from __future__ import absolute_import
 import os
 
 
@@ -27,4 +28,4 @@ class Stopword(object):
             self.worddict[word[:-1].lower()] = 1
 
     def is_stop(self, word):
-        return self.worddict.has_key(word.lower())
+        return word.lower() in self.worddict

@@ -8,11 +8,13 @@
 '''
 
 # library imports
-import sentlex
-import negdetect
-import stopwords
-from docscoreutil import *
-from sentanalysis import BasicDocSentiScore
+from __future__ import absolute_import
+from . import sentlex
+from . import negdetect
+from . import stopwords
+from .docscoreutil import *
+from .sentanalysis import BasicDocSentiScore
+
 
 class TaboadaDocSentiScore(BasicDocSentiScore):
     '''
@@ -32,12 +34,11 @@ class TaboadaDocSentiScore(BasicDocSentiScore):
           In this section we simply add logic for self.negated_shift_adj and call super for everything else
         '''
         super(TaboadaDocSentiScore, self).set_parameters(**kwargs)
-        if 'negation_shift' in kwargs.keys():
+        if 'negation_shift' in list(kwargs.keys()):
             self.negated_shift_adj = kwargs['negation_shift']
 
         # overrides score counting with this class's method
         self.score_mode = self.BACKOFF
-
 
     def _get_word_contribution(self, thisword, tagword, scoretuple, i, doclen):
         '''
@@ -56,31 +57,34 @@ class TaboadaDocSentiScore(BasicDocSentiScore):
         posindex = 0
         negindex = 1
 
-        # This algorithm defines a new score_mode (self.BACKOFF) and sets it by default at init time.
+        # This algorithm defines a new score_mode (self.BACKOFF) and sets it by
+        # default at init time.
         if (self.score_mode == self.BACKOFF) and\
-           ( 
+           (
             (self.score_stop and (not self.objectiveWords.is_stop(thisword))) or
             (not self.score_stop)
-           ):
+        ):
             # Calculate value with backoff
-            posval = scoretuple[posindex]/(self.tag_counter[tagword]+1.0)
-            negval = scoretuple[negindex]/(self.tag_counter[tagword]+1.0)
+            posval = scoretuple[posindex] / (self.tag_counter[tagword] + 1.0)
+            negval = scoretuple[negindex] / (self.tag_counter[tagword] + 1.0)
             # If negated, shift
             if self.negation:
                 # these adjustments will not count unless word is negated
-                if (posval>negval):
-                    posval = posval - ((self.vNEG[i-1])*self.negated_shift_adj)
-                if (negval>posval):
-                    negval = negval - ((self.vNEG[i-1])*self.negated_shift_adj)
+                if (posval > negval):
+                    posval = posval - ((self.vNEG[i - 1]) * self.negated_shift_adj)
+                if (negval > posval):
+                    negval = negval - ((self.vNEG[i - 1]) * self.negated_shift_adj)
             # Adjust score
             posval = self.score_function(posval, i, doclen)
             negval = self.score_function(negval, i, doclen)
             if self.score_freq:
                 # Scoring with frequency information
-                # Frequency is a real valued at 0.0-1.0. We calculate sqrt function so that the value grows faster even for numbers close to 0 
+                # Frequency is a real valued at 0.0-1.0. We calculate sqrt function so
+                # that the value grows faster even for numbers close to 0
                 posval *= 1.0 - max(math.sqrt(self.L.get_freq(thisword)), 0.25)
                 negval *= 1.0 - max(math.sqrt(self.L.get_freq(thisword)), 0.25)
-            self._debug('[_get_word_contribution] word %s (%s) at %d-th place on docsize %d is eligible (%2.2f, %2.2f).' % (thisword, str(scoretuple), i, doclen, posval, negval))
+            self._debug('[_get_word_contribution] word %s (%s) at %d-th place on docsize %d is eligible (%2.2f, %2.2f).' %
+                        (thisword, str(scoretuple), i, doclen, posval, negval))
 
         return (posval, negval)
 
@@ -93,17 +97,20 @@ class AV_LightTabSentiScore(TaboadaDocSentiScore):
      Pre-configured TaboadaDocSentiScore to score all words, A,V POS tags.
      This class uses a "light" threshold of 0.25 for shifting negated scores.
     '''
+
     def __init__(self, Lex):
         super(AV_LightTabSentiScore, self).__init__()
         self.set_parameters(L=Lex, a=True, v=True, n=False, r=False,
                             negation=True, negation_window=5, negation_shift=0.25,
                             score_stop=True, score_freq=True)
 
+
 class AV_AggressiveTabSentiScore(TaboadaDocSentiScore):
     '''
      Pre-configured TaboadaDocSentiScore to score all words, A,V POS tags.
      This class uses a "aggressive" threshold of 0.5 for shifting negated scores.
     '''
+
     def __init__(self, Lex):
         super(AV_AggressiveTabSentiScore, self).__init__()
         self.set_parameters(L=Lex, a=True, v=True, n=False, r=False,

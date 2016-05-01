@@ -7,19 +7,22 @@
 '''
 
 # library imports
-import sentlex
-from sentanalysis import BasicDocSentiScore
+from __future__ import absolute_import
+from . import sentlex
+from .sentanalysis import BasicDocSentiScore
 
 import pandas as pd
 import numpy as np
 import nltk
 from collections import Counter
 
+
 class InstSentiScore(BasicDocSentiScore):
     '''
      Subclass of BasicDocSentiScore implementing score "shifts" for negated terms
      and a backoff mechanism for counting repeated terms.
     '''
+
     def __init__(self, k=3, metric='found_ratio'):
         super(InstSentiScore, self).__init__()
         self.classifiers = {}
@@ -41,7 +44,7 @@ class InstSentiScore(BasicDocSentiScore):
             avgperf = self.models[m]['performance'].mean()
             if avgperf > best_so_far:
                 best_so_far = avgperf
-                self.best_avg_model = m 
+                self.best_avg_model = m
 
     def add_training_data(self, key, data):
         '''
@@ -49,8 +52,8 @@ class InstSentiScore(BasicDocSentiScore):
           Data is a list of examples in the form (param_val, success)
         '''
         assert key in self.classifiers, 'Unrecognized classifier %s ' % key
-        
-        self.models[key] = pd.DataFrame(data, columns = [self.metric, 'performance'])
+
+        self.models[key] = pd.DataFrame(data, columns=[self.metric, 'performance'])
         self._recompute()
 
     def classify_document(self, Doc, tagged=True, verbose=False, annotations=False, **kwargs):
@@ -73,10 +76,11 @@ class InstSentiScore(BasicDocSentiScore):
                           'tokens_found': tokens_found,
                           'found_ratio': tokens_found / tokens}
 
-            cl_res[cl]['performance'] = self._get_classifier_performance(cl, cl_res[cl]['found_ratio'])
+            cl_res[cl]['performance'] = self._get_classifier_performance(cl, cl_res[cl][
+                                                                         'found_ratio'])
 
         # best classifier has the best expected performance based on found ratio on training data
-        chosen = max([(cl_res[c]['performance'], c) for c in cl_res], key=lambda x:x[0])
+        chosen = max([(cl_res[c]['performance'], c) for c in cl_res], key=lambda x: x[0])
         best_cl = chosen[1]
         self.resultdata = self.classifiers[best_cl].resultdata
         self.cl_counter.update([best_cl])
@@ -85,7 +89,8 @@ class InstSentiScore(BasicDocSentiScore):
     def _get_classifier_performance(self, cl, m_val):
         metric = self.metric
         # normalize k for a ratio
-        k = float(self.K)/100.0
+        k = float(self.K) / 100.0
         mintk = max(0, m_val - k)
-        pd_neighbors = self.models[cl][self.models[cl][metric] >= mintk][self.models[cl][metric] <= (m_val + k)]['performance']
+        pd_neighbors = self.models[cl][self.models[cl][metric] >= mintk][
+            self.models[cl][metric] <= (m_val + k)]['performance']
         return pd_neighbors.mean()

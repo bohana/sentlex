@@ -21,7 +21,10 @@
       Proceedings of the workshop on negation and speculation in natural language processing. Association for Computational Linguistics, 2010.
   
 '''
+from __future__ import absolute_import
+from __future__ import print_function
 import re
+from six.moves import range
 
 # Pseudo-negations - to be ignored by the algorithm
 NEG_PSEUDO = set([
@@ -99,25 +102,26 @@ NEG_POSNEGATION = set([
 
 NEG_ENDOFWINDOW = set([
     '.', ':', ';', ',', ')', '!', ';', '?', ']',
-    'but', 
-    'however', 
-    'nevertheless', 
+    'but',
+    'however',
+    'nevertheless',
     'yet',
     'though', 'although',
-    'still', 
-    'aside from', 
-    'except', 
-    'apart from', 
-    'because', 
+    'still',
+    'aside from',
+    'except',
+    'apart from',
+    'because',
     'unless',
     'therefore'
 ])
+
 
 def getNegationArray(doc, windowsize, debugmode=False, postag=True):
     '''
       NegEx-based negation detection algorithm for text.
       Receives a POS-tagged document in list form and size of negating window. A POS-tagged document takes the form:
-      
+
          Do_VBP n't_RB tell_VB her_PRP who_WP I_PRP am_VBP seeing_VBG
 
       Returns array A where A[i] indicates whether this position in the document has been negated by an expression (1), or not (0).
@@ -131,13 +135,14 @@ def getNegationArray(doc, windowsize, debugmode=False, postag=True):
     '''
 
     def debug(msg):
-        if debugmode: print '[getNegationArray] - %s' % msg
+        if debugmode:
+            print('[getNegationArray] - %s' % msg)
 
     def get_pos_separator(doc):
         '''
          given a list of tokens "guesses" the part of speech separator based on first tokens
         '''
-        for i in xrange(min(2,len(doc))):
+        for i in range(min(2, len(doc))):
             if '_' in doc[i]:
                 return '_'
             elif '/' in doc[i]:
@@ -171,17 +176,17 @@ def getNegationArray(doc, windowsize, debugmode=False, postag=True):
     found_neg_bck = False
     inwindow = 0
     separator = '_'
-    if postag: 
+    if postag:
         separator = get_pos_separator(doc)
         untagged_doc = [w.split(separator)[0] for w in doc]
     else:
         untagged_doc = doc
 
     docsize = len(untagged_doc)
-    for i in xrange(docsize):
+    for i in range(docsize):
         unigram = untagged_doc[i]
         if i < (docsize - 1):
-            bigram = unigram + ' ' + untagged_doc[i+1]
+            bigram = unigram + ' ' + untagged_doc[i + 1]
         else:
             bigram = unigram
 
