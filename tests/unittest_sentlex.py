@@ -4,17 +4,8 @@ import sys
 import os
 import unittest
 
-#####
-#
-# Unit Testing for sentlex
-#
-####
 
-# T0 - test all basic methods
-
-
-class T0_generic(unittest.TestCase):
-
+class TestGenericLexicon(unittest.TestCase):
     def runTest(self):
         L = sentlex.MobyLexicon()
         L.set_name('UnitTest')
@@ -36,23 +27,15 @@ class T0_generic(unittest.TestCase):
         self.assertTrue(L.get_info()['r']['size'] > 0, 'get_info failed for r.')
 
 
-class T2_freqdist(unittest.TestCase):
-
+class TestFreqDist(unittest.TestCase):
     def runTest(self):
-        L = sentlex.MobyLexicon()
+        L = sentlex.SWN3Lexicon()
         L.compile_frequency()
 
         self.assertTrue(L.is_loaded, 'Lexicon did not load')
         self.assertTrue(L.is_compiled, 'Lexicon did not compile')
         self.assertTrue(L.get_freq('good') > 0, 'Frq dist looks broken')
         self.assertTrue(L.get_freq('notawordnowayjosay') == 0.0, 'Freq found a non existent word')
-
-
-class T21_freqdist(unittest.TestCase):
-
-    def runTest(self):
-        L = sentlex.SWN3Lexicon()
-        L.compile_frequency()
 
         baseline = [('bad', 0.0005451764705882353),
                     ('good', 0.002610137254901961),
@@ -63,11 +46,8 @@ class T21_freqdist(unittest.TestCase):
             self.assertTrue(L.get_freq(w) == f,
                             'Incorrect freq found for %s (%.8f <> %.8f)' % (w, f, L.get_freq(w)))
 
-# T3. Multiple lexicons
 
-
-class T3_multiplelexicons(unittest.TestCase):
-
+class TestMultiple(unittest.TestCase):
     def runTest(self):
         L1 = sentlex.MobyLexicon()
         L2 = sentlex.MobyLexicon()
@@ -82,11 +62,3 @@ class T3_multiplelexicons(unittest.TestCase):
         self.assertEqual(L3.get_name(), 'UnitTest3', 'Something weird with lexicon instantiation.')
         self.assertEqual(L2.get_name(), 'UnitTest2', 'Something weird with lexicon instantiation.')
         self.assertEqual(L1.get_name(), 'UnitTest1', 'Something weird with lexicon instantiation.')
-
-#
-# Runs unit testing if module is called directly
-#
-if __name__ == "__main__":
-
-    # Run those guys
-    unittest.main()

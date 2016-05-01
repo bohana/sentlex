@@ -14,8 +14,7 @@ import os
 import unittest
 
 
-class T1_repeat_backoff(unittest.TestCase):
-
+class TestBackoff(unittest.TestCase):
     def runTest(self):
         ds = sentdoc.BasicDocSentiScore()
         ds.verbose = False
@@ -36,12 +35,3 @@ class T1_repeat_backoff(unittest.TestCase):
 
         # finally check for bad input
         self.assertTrue(ds._repeated_backoff(1.0, 0.0, 1.0) == 0.0)
-
-
-#
-# Runs unit testing if module is called directly
-#
-if __name__ == "__main__":
-
-    # Run those guys
-    unittest.main()

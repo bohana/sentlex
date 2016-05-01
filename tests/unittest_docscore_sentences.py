@@ -13,15 +13,6 @@ import sys
 import os
 import unittest
 
-#####
-#
-# Unit Testing for doc sentiment analysis
-#
-####
-
-#
-# Data
-#
 TESTDOC_ADJ = 'good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ'
 TESTDOC_UNTAGGED = 'this cookie is good. it is very good indeed'
 TESTDOC_BADADJ = 'bad_JJ Bad_JJ bAd_JJ'
@@ -35,8 +26,7 @@ at/IN one/CD point/NN during/IN brian/NN de/IN palma/NN 's/POS crime/NN epic/NN 
 '''
 
 
-class T1_scoring_documents(unittest.TestCase):
-
+class TestScoringDocs(unittest.TestCase):
     def runTest(self):
         # load lexicon
         L = sentlex.MobyLexicon()
@@ -66,8 +56,7 @@ class T1_scoring_documents(unittest.TestCase):
         (dpos, dneg) = ds.classify_document(TESTDOC_CORRUPT, verbose=False)
 
 
-class T4_large_docs(unittest.TestCase):
-
+class TestLargeDocs(unittest.TestCase):
     def runTest(self):
         # load lexicon
         L = sentlex.SWN3Lexicon()
@@ -77,8 +66,7 @@ class T4_large_docs(unittest.TestCase):
             (p, n) = algo.classify_document(doc, verbose=True)
 
 
-class T3_questioned_docs(unittest.TestCase):
-
+class TestQuestions(unittest.TestCase):
     def runTest(self):
         L = sentlex.SWN3Lexicon()
         self.assertTrue(L.is_loaded, 'Test lexicon did not load correctly')
@@ -95,11 +83,3 @@ class T3_questioned_docs(unittest.TestCase):
         algo.set_parameters(question_minsize=1000)
         (p, n) = algo.classify_document(TESTDOC_QUESTIONED, verbose=False)
         self.assertTrue(p > n, 'Negation weight was not ignored')
-
-
-#
-# Runs unit testing if module is called directly
-#
-if __name__ == "__main__":
-    # Run those guys
-    unittest.main()

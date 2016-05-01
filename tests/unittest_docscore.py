@@ -14,15 +14,6 @@ import sys
 import os
 import unittest
 
-#####
-#
-# Unit Testing for doc sentiment analysis
-#
-####
-
-#
-# Data
-#
 TESTDOC_ADJ = 'good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ'
 TESTDOC_UNTAGGED = 'this cookie is good. it is very good indeed'
 TESTDOC_BADADJ = 'bad_JJ Bad_JJ bAd_JJ'
@@ -30,11 +21,8 @@ TESTDOC_NEGATED = 'not/DT bad/JJ ./. not/DT really/RR bad/JJ'
 TESTDOC_CORRUPT = 'this_DT doc_NN is_VB not_DT not_DT not_DT in great/JJ shape/JJ good_JJ good_JJ good_JJ'
 TESTDOC_EMPTY = ''
 
-# T0 - Basic Class functionality
 
-
-class T0_parameter_setting(unittest.TestCase):
-
+class TestParameterSetting(unittest.TestCase):
     def runTest(self):
         # empty list
         ds = sentdoc.BasicDocSentiScore()
@@ -54,8 +42,7 @@ class T0_parameter_setting(unittest.TestCase):
         self.assertEqual(ds.negation, False, 'Unable to set parameters via kwards')
 
 
-class T1_scoring_documents(unittest.TestCase):
-
+class TestScoring(unittest.TestCase):
     def runTest(self):
         # load lexicon
         L = sentlex.MobyLexicon()
@@ -89,8 +76,7 @@ class T1_scoring_documents(unittest.TestCase):
         self.assertTrue(dpos > dneg, 'Did not find positive words on TESTDOC_NEGATED')
 
 
-class T2_scoring_untagged(unittest.TestCase):
-
+class TestScoringUntagged(unittest.TestCase):
     def runTest(self):
         # load lexicon
         L = sentlex.MobyLexicon()
@@ -115,8 +101,7 @@ class T2_scoring_untagged(unittest.TestCase):
         self.assertTrue(dpos == 0 and dneg == 0, 'Scprng with no active tags should not happen')
 
 
-class T3_scoring_functions(unittest.TestCase):
-
+class TestScoringFunctions(unittest.TestCase):
     def runTest(self):
         # load lexicon
         L = sentlex.MobyLexicon()
@@ -130,8 +115,7 @@ class T3_scoring_functions(unittest.TestCase):
         (dpos, dneg) = ds.classify_document(TESTDOC_ADJ, verbose=False)
 
 
-class T4_sample_classes(unittest.TestCase):
-
+class TestSampleClasses(unittest.TestCase):
     def runTest(self):
         # load lexicon
         L = sentlex.MobyLexicon()
@@ -148,11 +132,3 @@ class T4_sample_classes(unittest.TestCase):
             print(p, n)
             self.assertTrue(p > n, 'Sample document not scored correctly in %s' %
                             str(algo.__class__))
-
-#
-# Runs unit testing if module is called directly
-#
-if __name__ == "__main__":
-
-    # Run those guys
-    unittest.main()

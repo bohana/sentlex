@@ -13,15 +13,7 @@ import sys
 import os
 import unittest
 
-#####
-#
-# Unit Testing for doc sentiment analysis
-#
-####
 
-#
-# Data
-#
 TESTDOC_ADJ = 'good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ good/JJ'
 TESTDOC_UNTAGGED = 'this cookie is good. it is very good indeed'
 TESTDOC_BADADJ = 'bad_JJ Bad_JJ bAd_JJ'
@@ -29,13 +21,10 @@ TESTDOC_NEGATED = 'not/DT bad/JJ movie/NN ./. blah/NN blah/NN not/DT really/RR g
 TESTDOC_CORRUPT = 'this_DT doc_NN is_VB not_DT not_DT not_DT in great/JJ shape/JJ good_JJ good_JJ good_JJ'
 TESTDOC_EMPTY = ''
 
-# T0 - Basic Class functionality
 
 
-class T0_parameter_setting(unittest.TestCase):
-
+class TestPottsParameterSetting(unittest.TestCase):
     def runTest(self):
-        # empty list
         ds = sentdoc.PottsDocSentiScore()
         ds.verbose = False
 
@@ -51,10 +40,8 @@ class T0_parameter_setting(unittest.TestCase):
         self.assertEqual(ds.score_freq, True, 'Unable to set parameters via kwards')
 
 
-class T_atenuation_setting(unittest.TestCase):
-
+class TestAtenuation(unittest.TestCase):
     def runTest(self):
-        # empty list
         ds = sentdoc.PottsDocSentiScore()
         L = sentlex.MobyLexicon()
         ds.verbose = True
@@ -77,8 +64,7 @@ class T_atenuation_setting(unittest.TestCase):
         self.assertTrue(dposfull > dpos, 'Negation did not atenuate scores.')
 
 
-class T1_scoring_documents(unittest.TestCase):
-
+class TestScoreWithPotts(unittest.TestCase):
     def runTest(self):
         # load lexicon
         L = sentlex.MobyLexicon()
@@ -115,8 +101,7 @@ class T1_scoring_documents(unittest.TestCase):
         self.assertTrue(dpos > dneg, 'Did not process corrupt document correctly')
 
 
-class T4_sample_classes(unittest.TestCase):
-
+class TestSamplePottsClasses(unittest.TestCase):
     def runTest(self):
         # load lexicon
         L = sentlex.MobyLexicon()
@@ -130,11 +115,3 @@ class T4_sample_classes(unittest.TestCase):
             (p, n) = algo.classify_document(TESTDOC_NEGATED)
             self.assertTrue(n > 0.0, 'Sample document not scored correctly in %s' %
                             str(algo.__class__))
-
-#
-# Runs unit testing if module is called directly
-#
-if __name__ == "__main__":
-
-    # Run those guys
-    unittest.main()
