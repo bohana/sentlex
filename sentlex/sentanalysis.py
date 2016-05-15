@@ -1,11 +1,11 @@
-'''
+"""
 
    Lexicon-Based Sentiment Analysis Library
 
    Performs sentiment classification on input
    documents with the assistance of sentiment lexicons.
 
-'''
+"""
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -22,13 +22,12 @@ from .docscoreutil import *
 
 
 class DocSentiScore(object):
-    '''
+    """
      DocSentiScore
 
      This class performs lexicon-based sentiment classification on an input document
      given a set of parameters that configure the classification algorithm.
-    '''
-
+    """
     def __init__(self):
         # initialize the default stopwords list
         self.objectiveWords = stopwords.Stopword()
@@ -39,15 +38,15 @@ class DocSentiScore(object):
         self.negated_term_adj = 0.0
         self.L = None
         self.verbose = False
-        self.resultdata = {}
+        self._resultdata = {}
 
-    def classify_document(self, Doc, tagged=True, verbose=True, **kwargs):
-        '''
+    def classify_document(self, doc, tagged=True, verbose=True, **kwargs):
+        """
          Classify an input document with classifier parameters per kwargs.
            Doc - string, inoput document.
            tagged - indicate wheter document is POS-tagged (False will call NLTK's default tagger)
            verbose - debug messages printed.
-           **kwargs - classifier-specific parameters (optional). 
+           **kwargs - classifier-specific parameters (optional).
 
          When subclassing the default classifier, classify_doc (the algorithm)
          and set_parameters (parse algo parameters) need to be implemented.
@@ -57,24 +56,26 @@ class DocSentiScore(object):
            a,v,r,n - POS tags to scan (booleans);
            negation - boolean
            negation_window - integer
-        '''
+        """
         raise NotImplementedError
 
     def set_parameters(self, **kwargs):
-        '''
+        """
          sets runtime parameters for this classification algorithm
-        '''
+        """
         raise NotImplementedError
 
-    def set_lexicon(self, newL):
-        assert newL.is_loaded, 'Lexicon must be loaded before use.'
-        self.L = newL
+    def set_lexicon(self, L):
+        if not L.is_loaded:
+            raise RuntimeError('Lexicon must be loaded before use.')
 
-    def _detect_tag(self, Doc):
-        '''
+        self.L = L
+
+    def _detect_tag(self, doc):
+        """
          For an input doc, detect POS separator (Brown or UPenn), if any, based on first 3 tokens.
          Returns None if no consistent match is found.
-        '''
+        """
         def check_sep(sep, tokens):
             # does my separator generates tuples?
             seplist = [nltk.tag.str2tuple(i, sep=sep)[1] for i in tokens]
@@ -82,7 +83,7 @@ class DocSentiScore(object):
                 return None
             return sep
 
-        tokens = Doc.split()
+        tokens = doc.split()
         mintags = min(3, len(tokens))
         tokens = tokens[:mintags]
         for i in ['/', '_']:
@@ -92,19 +93,23 @@ class DocSentiScore(object):
 
         return None
 
-    def pos_tag(self, Doc):
-        '''
+    def pos_tag(self, doc):
+        """
          Returns POS-tagged document using NLTK's recommended tagger.
-        '''
-        return ' '.join([x[0] + '/' + x[1] for x in nltk.pos_tag(nltk.word_tokenize(Doc))])
+        """
+        return ' '.join([x[0] + '/' + x[1] for x in nltk.pos_tag(nltk.word_tokenize(doc))])
 
     def _debug(self, msg):
         if self.verbose:
             print(msg)
 
+    @property
+    def resultdata(self):
+        return self._resultdata
+
 
 class BasicDocSentiScore(DocSentiScore):
-    '''
+    """
       BasicDocSentiScore
       This class implements algorithm that scans and sums sentiment scores
       found in the document, based on a sentiment lexicon.
@@ -116,8 +121,7 @@ class BasicDocSentiScore(DocSentiScore):
       - weight function: function to adjust scores based on location within document.
         (some basic functions are supplied in the class, but they can be user defined)
 
-    '''
-
+    """
     def __init__(self):
         # calls superclass
         super(BasicDocSentiScore, self).__init__()
@@ -143,9 +147,9 @@ class BasicDocSentiScore(DocSentiScore):
         self.lemma_cache = {}
 
     def set_active_pos(self, a=True, v=True, n=False, r=False):
-        '''
+        """
          determine which POS tags to apply during classification
-        '''
+        """
         self.a = a
         self.v = v
         self.n = n
@@ -156,19 +160,19 @@ class BasicDocSentiScore(DocSentiScore):
     # - the methods in this section can be overriden to implement technique variations for lex-based classifiers
     #
     def _negation_calc(self, tags, window):
-        '''
+        """
          for a list of tokens, calculate array of negated words based on a negation detection
          algorithm (NegEx in our case).
          returns arran vNEG containing [0,1] for each index of token on original tags list, indicating negation.
-        '''
+        """
         vNEG = negdetect.getNegationArray(tags, window)
         return vNEG
 
     def _get_word_contribution(self, thisword, tagword, scoretuple, i, doclen):
-        '''
+        """
          Returns tuple (posval, negval) containing score contribution for i-th word in document, based
          on algorithm setup and scoretuple retrieved from lexicon.
-        '''
+        """
         posval = 0.0
         negval = 0.0
         # Negation detection: flip indexes for pos/neg values if negated word
@@ -215,9 +219,9 @@ class BasicDocSentiScore(DocSentiScore):
         return (posval, negval)
 
     def _repeated_backoff(self, val, repeatcount, alpha):
-        '''
+        """
           Adjusts score *val* using exponential backoff and adjustment factor *alpha*
-        '''
+        """
         if repeatcount == 0:
             # should not be scoring a word that never ocurred
             return 0.0
@@ -225,13 +229,13 @@ class BasicDocSentiScore(DocSentiScore):
         return val * (1.0 / math.pow(2, alpha * (repeatcount - 1)))
 
     def _doc_score_adjust(self, posval, negval):
-        '''
+        """
          Final adjustments to doc scoring once scan completes
-        '''
+        """
         return (posval, negval)
 
     def _freq_adjust(self, score, p):
-        '''
+        """
           Adjust contribution of a word score based on frequency information given by the formula for self-information:
             I(x) = -log(p(x))
           Where p(x) is estimated based on a word frequency list.
@@ -239,7 +243,7 @@ class BasicDocSentiScore(DocSentiScore):
           The frequency is also weight-adjusted according to freq_weight ( 0.0..1.0, defaults to 1.0) using the formula:
             score = (weight * I(x)) + (1 - weight)
 
-        '''
+        """
         # unknown words get a mid-range value
         if p == 0.0:
             p = 0.0005
@@ -249,13 +253,13 @@ class BasicDocSentiScore(DocSentiScore):
 
     def _reset_runtime_vars(self):
         self.vNEG = []
-        self.resultdata = {}
+        self._resultdata = {}
         self.tag_counter = collections.Counter()
 
     def _lemmatize_verb(self, word):
-        '''
+        """
          Returns lemma of a given word, if verb
-        '''
+        """
         # first query local cache in case this lemma already exists
         if word in self.lemma_cache:
             return self.lemma_cache[word]
@@ -265,21 +269,25 @@ class BasicDocSentiScore(DocSentiScore):
                 self.lemma_cache[word] = lemma
             return lemma
 
-    def classify_document(self, Doc, tagged=True, verbose=False, annotations=False, **kwargs):
-        '''
+    def classify_document(self, doc, tagged=True, verbose=False, annotations=False, **kwargs):
+        """
          Performs lexicon-based sentiment classification of input document.
-         Doc is a POS-tagged document, which can optionally be tagged on-the-fly when tagged=False.
-         **kwards are parameter settings for this algorithm. (optional)
 
-         In addition to default parameters, this class accepts the following
-         as tunables for this algorithm:
-          - score_mode: one of SCOREALL/ONCE
-          - score_freq: enable frequency-adjusted scores
-          - score_stop: enable stop-word detection (stop words are discarded, override what lexicon may say)
+         Parameters
+         ----------
+         doc : str
+            Input document.
+         tagged : bool
+            boolean indicating document is already POS-tagged.
+         verbose : bool
+            output verbose logging.
+         annotations : bool
+            generate annotations (can be queried with self.resultdata property)
+         **kwargs : dict
+            optional keyword arguments to configure the classifier.
 
-         Returns: (pos_Score, neg_score) - total scores obtained from the scan.
-
-        '''
+         Returns: (pos_score, neg_score) - total scores obtained from the scan.
+        """
         # Process input parameters, if any
         self.set_parameters(**kwargs)
         self.verbose = verbose
@@ -287,11 +295,12 @@ class BasicDocSentiScore(DocSentiScore):
 
         # POS-taging and tag detection
         if not tagged:
-            tagged_doc = self.pos_tag(Doc)
+            tagged_doc = self.pos_tag(doc)
         else:
-            tagged_doc = Doc
+            tagged_doc = doc
         tagsep = self._detect_tag(tagged_doc)
-        assert tagsep, 'Unable to detect tag separator: ' + Doc[:100]
+        if not tagsep:
+            raise RuntimeError('Unable to detect tag separator in {}'.format(' '.join(doc[:100])))
 
         # ready to start - reset runtime vars
         self._reset_runtime_vars()
@@ -376,9 +385,9 @@ class BasicDocSentiScore(DocSentiScore):
         (resultpos, resultneg) = self._doc_score_adjust(postotal, negtotal)
 
         # updates class data structures containing results
-        self.resultdata = {
+        self._resultdata = {
             'annotated_doc': ' '.join(annotatedTags),
-            'doc': Doc,
+            'doc': doc,
             'resultpos': resultpos,
             'resultneg': resultneg,
             'tokens_found': foundcounter,
@@ -387,11 +396,11 @@ class BasicDocSentiScore(DocSentiScore):
             'unscored_list': tagUnscored
         }
 
-        self._debug('Result data: %s' % str(self.resultdata))
+        self._debug('Result data: %s' % str(self._resultdata))
         return (resultpos, resultneg)
 
     def set_parameters(self, **kwargs):
-        '''
+        """
           Parameters that can be set on this type of algorithm:
           L, lexicon
           a,n,v,r: POS tags to enable
@@ -401,43 +410,33 @@ class BasicDocSentiScore(DocSentiScore):
           score_mode: score each word once/always
           score_freq: frequency adjust word scores
           score_stop: discard stop words
-        '''
+        """
         # calls superclass set_parameters
-        if 'L' in list(kwargs.keys()):
+        if 'L' in kwargs:
             self.set_lexicon(kwargs['L'])
 
         # POS tags to enable
-        tags = {'a': self.a, 'n': self.n, 'v': self.v, 'r': self.r}
-        for tag in tags.keys():
-            if tag in list(kwargs.keys()):
-                tags[tag] = kwargs[tag]
-        self.set_active_pos(a=tags['a'], v=tags['v'], n=tags['n'], r=tags['r'])
+        self.set_active_pos(a=kwargs.get('a', self.a),
+                            v=kwargs.get('v', self.v),
+                            n=kwargs.get('n', self.n),
+                            r=kwargs.get('r', self.r))
 
         # Negation
-        if 'negation_window' in list(kwargs.keys()):
-            window = kwargs['negation_window']
-            self.negation_window = window
+        self.negation = kwargs.get('negation', self.negation)
+        if 'negation_window' in kwargs:
+            self.negation_window = int(kwargs['negation_window'])
             self.negation = True
-        if 'negation_adjustment' in list(kwargs.keys()):
-            adj = kwargs['negation_adjustment']
-            self.negated_ter_adj = adj
-        if 'negation' in list(kwargs.keys()):
-            self.negation = kwargs['negation']
-        if 'atenuation' in list(kwargs.keys()):
+
+        if 'atenuation' in kwargs:
             self.negation = True
             self.atenuation = kwargs['atenuation']
 
-        if 'at_pos' in list(kwargs.keys()):
-            self.at_pos = float(kwargs['at_pos'])
-        if 'at_neg' in list(kwargs.keys()):
-            self.at_neg = float(kwargs['at_neg'])
+        self.at_pos = float(kwargs.get('at_pos', self.at_pos))
+        self.at_neg = float(kwargs.get('at_neg', self.at_neg))
 
-        if 'score_mode' in kwargs:
-            self.score_mode = kwargs['score_mode']
-        if 'score_freq' in kwargs:
-            self.score_freq = kwargs['score_freq']
-        if 'score_stop' in kwargs:
-            self.score_stop = kwargs['score_stop']
+        self.score_mode = kwargs.get('score_mode', self.score_mode)
+        self.score_freq = kwargs.get('score_freq', self.score_freq)
+        self.score_stop = kwargs.get('score_stop', self.score_stop)
 
         if 'score_function' in kwargs:
             self.score_function = getattr(self, '_score_' + kwargs['score_function'])
@@ -455,17 +454,16 @@ class BasicDocSentiScore(DocSentiScore):
     #
     # score weight adjustment functions
     #
-
     def _score_noop(self, score, i, N):
-        '''
+        """
           no-op function: returns score given as-is
-        '''
+        """
         return score
 
     def _score_linear(self, score, i, N):
-        '''
+        """
          lineasr adjustment of scores per word position in text
-        '''
+        """
         # we want the interval to vary from 0.5-1.0 of original score
         BAND = 0.5
         FLOOR = 0.5
@@ -477,13 +475,10 @@ class BasicDocSentiScore(DocSentiScore):
 #
 # Sample Pre-defined algorithms based on BasicDocSentiScore
 #
-
-
 class AV_AllWordsDocSentiScore(BasicDocSentiScore):
-    '''
+    """
      Pre-configured BasicDocSentiScore to score all words, negation detection enabled, A,V POS tags
-    '''
-
+    """
     def __init__(self, Lex):
         super(AV_AllWordsDocSentiScore, self).__init__()
         self.set_parameters(L=Lex, a=True, v=True, n=False, r=False,
@@ -492,10 +487,9 @@ class AV_AllWordsDocSentiScore(BasicDocSentiScore):
 
 
 class A_AllWordsDocSentiScore(BasicDocSentiScore):
-    '''
+    """
      Pre-configured BasicDocSentiScore to score all words, negation detection enabled, A POS tag
-    '''
-
+    """
     def __init__(self, Lex):
         super(A_AllWordsDocSentiScore, self).__init__()
         self.set_parameters(L=Lex, a=True, v=False, n=False, r=False,
@@ -504,10 +498,9 @@ class A_AllWordsDocSentiScore(BasicDocSentiScore):
 
 
 class A_OnceWordsDocSentiScore(BasicDocSentiScore):
-    '''
+    """
      Pre-configured BasicDocSentiScore to score once, negation detection enabled, A POS tags
-    '''
-
+    """
     def __init__(self, Lex):
         super(A_OnceWordsDocSentiScore, self).__init__()
         self.set_parameters(L=Lex, a=True, v=False, n=False, r=False,
@@ -516,10 +509,9 @@ class A_OnceWordsDocSentiScore(BasicDocSentiScore):
 
 
 class AV_OnceWordsDocSentiScore(BasicDocSentiScore):
-    '''
+    """
      Pre-configured BasicDocSentiScore to score once, negation detection enabled, A,V POS tags
-    '''
-
+    """
     def __init__(self, Lex):
         super(AV_OnceWordsDocSentiScore, self).__init__()
         self.set_parameters(L=Lex, a=True, v=True, n=False, r=False,
@@ -528,10 +520,9 @@ class AV_OnceWordsDocSentiScore(BasicDocSentiScore):
 
 
 class AV_Lin_AllWordsDocSentiScore(BasicDocSentiScore):
-    '''
+    """
      Pre-configured BasicDocSentiScore to score once, negation detection enabled, A,V POS tags
-    '''
-
+    """
     def __init__(self, Lex):
         super(AV_Lin_AllWordsDocSentiScore, self).__init__()
         self.set_parameters(L=Lex, a=True, v=True, n=False, r=False,
@@ -541,10 +532,9 @@ class AV_Lin_AllWordsDocSentiScore(BasicDocSentiScore):
 
 
 class A_Lin_AllWordsDocSentiScore(BasicDocSentiScore):
-    '''
+    """
      Pre-configured BasicDocSentiScore to score once, negation detection enabled, A,V POS tags
-    '''
-
+    """
     def __init__(self, Lex):
         super(A_Lin_AllWordsDocSentiScore, self).__init__()
         self.set_parameters(L=Lex, a=True, v=False, n=False, r=False,
@@ -554,10 +544,9 @@ class A_Lin_AllWordsDocSentiScore(BasicDocSentiScore):
 
 
 class A_Cos_AllWordsDocSentiScore(BasicDocSentiScore):
-    '''
+    """
      Pre-configured BasicDocSentiScore to score once, negation detection enabled, A,V POS tags
-    '''
-
+    """
     def __init__(self, Lex):
         super(A_Cos_AllWordsDocSentiScore, self).__init__()
         self.set_parameters(L=Lex, a=True, v=False, n=False, r=False,
@@ -567,10 +556,9 @@ class A_Cos_AllWordsDocSentiScore(BasicDocSentiScore):
 
 
 class AV_Cos_AllWordsDocSentiScore(BasicDocSentiScore):
-    '''
+    """
      Pre-configured BasicDocSentiScore to score once, negation detection enabled, A,V POS tags
-    '''
-
+    """
     def __init__(self, Lex):
         super(AV_Cos_AllWordsDocSentiScore, self).__init__()
         self.set_parameters(L=Lex, a=True, v=True, n=False, r=False,

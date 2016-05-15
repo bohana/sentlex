@@ -87,7 +87,7 @@ class SentenceDocSentiScore(DocSentiScore):
 
         self._debug('[sent classifier] - Found %d sentences' % len(tagged_sentences))
         # initialize data structure containing results
-        self.resultdata = {
+        self._resultdata = {
             'annotated_doc': '',
             'doc': Doc,
             'resultpos': 0,
@@ -116,22 +116,17 @@ class SentenceDocSentiScore(DocSentiScore):
                 tot_neg += cur_neg
 
                 # update algorithm results
-                self.resultdata[
-                    'tokens_found'] += self.sentence_classifier.resultdata['tokens_found']
-                self.resultdata[
-                    'annotated_doc'] += self.sentence_classifier.resultdata['annotated_doc']
-                self.resultdata[
-                    'tokens_negated'] += self.sentence_classifier.resultdata['tokens_negated']
-                self.resultdata[
-                    'unscored_list'] += self.sentence_classifier.resultdata['unscored_list']
-                self.resultdata['found_list'].update(
-                    self.sentence_classifier.resultdata['found_list'])
+                self._resultdata['tokens_found'] += self.sentence_classifier.resultdata['tokens_found']
+                self._resultdata['annotated_doc'] += self.sentence_classifier.resultdata['annotated_doc']
+                self._resultdata['tokens_negated'] += self.sentence_classifier.resultdata['tokens_negated']
+                self._resultdata['unscored_list'] += self.sentence_classifier.resultdata['unscored_list']
+                self._resultdata['found_list'].update(self.sentence_classifier.resultdata['found_list'])
             except Exception as e:
                 print('[sent classifier] - Error processing sentence (%s): %s' % (sentence, str(e)))
                 raise
 
-        self.resultdata['resultpos'] = tot_pos
-        self.resultdata['resultneg'] = tot_neg
+        self._resultdata['resultpos'] = tot_pos
+        self._resultdata['resultneg'] = tot_neg
         return (tot_pos, tot_neg)
 
     def set_parameters(self, **kwargs):

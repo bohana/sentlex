@@ -89,7 +89,7 @@ class TestScoringUntagged(unittest.TestCase):
         ds.set_lexicon(L)
 
         # score untagged doc - this should cause an exception
-        self.assertRaises(AssertionError, ds.classify_document, TESTDOC_UNTAGGED, verbose=False)
+        self.assertRaises(RuntimeError, ds.classify_document, TESTDOC_UNTAGGED, verbose=False)
 
         # this should work
         (dpos, dneg) = ds.classify_document(TESTDOC_UNTAGGED, verbose=False, tagged=False)

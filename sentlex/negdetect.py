@@ -7,19 +7,19 @@
   Negating windows are bounded by punctuation, known limiting tokens or a user-specified maximum window size.
 
   About NegEx:
- 
-      Chapman, Wendy W., et al. 
-      "A simple algorithm for identifying negated findings and diseases in discharge summaries." 
+
+      Chapman, Wendy W., et al.
+      "A simple algorithm for identifying negated findings and diseases in discharge summaries."
       Journal of biomedical informatics 34.5 (2001): 301-310.
 
       http://rods.health.pitt.edu/LIBRARY/NLP%20Papers/chapman_JBI_2001_negation.pdf
 
   The tokens used in this algorithm were extended based on experimentation and the list described on:
 
-      Councill, Isaac G., Ryan McDonald, and Leonid Velikovich. 
-      "What's great and what's not: learning to classify the scope of negation for improved sentiment analysis." 
+      Councill, Isaac G., Ryan McDonald, and Leonid Velikovich.
+      "What's great and what's not: learning to classify the scope of negation for improved sentiment analysis."
       Proceedings of the workshop on negation and speculation in natural language processing. Association for Computational Linguistics, 2010.
-  
+
 '''
 from __future__ import absolute_import
 from __future__ import print_function
@@ -131,7 +131,7 @@ def getNegationArray(doc, windowsize, debugmode=False, postag=True):
          doc        - input doc as *list* of tokens, with or w/out part of speech
          windowsize - the default cut off window size that limits the scope of a negation.
          debugmode  - prints more stuff
-         postag     - True/False, whether input document has been POS-tagged 
+         postag     - True/False, whether input document has been POS-tagged
     '''
 
     def debug(msg):
