@@ -541,27 +541,3 @@ class A_Lin_AllWordsDocSentiScore(BasicDocSentiScore):
                             negation=True, negation_window=5,
                             score_mode=self.SCOREALL, score_stop=True, score_freq=True,
                             score_function='linear')
-
-
-class A_Cos_AllWordsDocSentiScore(BasicDocSentiScore):
-    """
-     Pre-configured BasicDocSentiScore to score once, negation detection enabled, A,V POS tags
-    """
-    def __init__(self, Lex):
-        super(A_Cos_AllWordsDocSentiScore, self).__init__()
-        self.set_parameters(L=Lex, a=True, v=False, n=False, r=False,
-                            negation=True, negation_window=5,
-                            score_mode=self.SCOREALL, score_stop=True, score_freq=True,
-                            score_function='cosine')
-
-
-class AV_Cos_AllWordsDocSentiScore(BasicDocSentiScore):
-    """
-     Pre-configured BasicDocSentiScore to score once, negation detection enabled, A,V POS tags
-    """
-    def __init__(self, Lex):
-        super(AV_Cos_AllWordsDocSentiScore, self).__init__()
-        self.set_parameters(L=Lex, a=True, v=True, n=False, r=False,
-                            negation=True, negation_window=5,
-                            score_mode=self.SCOREALL, score_stop=True, score_freq=True,
-                            score_function='cosine')
