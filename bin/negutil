@@ -1,13 +1,12 @@
 #! /bin/env python
-
-'''
- Classify input document using sentlex library
-'''
-
+from __future__ import absolute_import
+from __future__ import print_function
 import sentlex.negdetect as negdetect
 from optparse import OptionParser
 import sys
 import nltk
+from six.moves import range
+
 
 def main():
     # grab parameters
@@ -24,27 +23,32 @@ def main():
 
     # open document
     if not options.inputfile:
-        print 'Must give an input file to analyze. Use --file'
+        print('Must give an input file to analyze. Use --file')
         sys.exit(1)
+
     f = open(options.inputfile)
     doc = f.read()
     doc = nltk.tokenize.WordPunctTokenizer().tokenize(doc)
 
     # run negation detection
     neg_array = negdetect.getNegationArray(doc, int(options.window), debugmode=options.verbose, postag=options.tagged)
+    print(neg_array)
 
     # prints output with negation markers
     negated=False
-    for i in range(len(doc)):
-        if neg_array[i]==1 and (not negated): 
-            print '[[ ',
+    for i, word in enumerate(doc):
+        if neg_array[i]==1 and (not negated):
+            print('[[ ', end=' ')
             negated=True
         if neg_array[i]==0 and negated:
-            print ' ]]',
+            print(' ]]', end=' ')
             negated=False
-        print doc[i],
-    if negated: print ' ]]'
-    print '\n *** '
+        print(word, end=' ')
+    if negated:
+        print(' ]]')
 
-if (__name__ == "__main__"):
+    print('\n *** ')
+
+
+if __name__ == "__main__":
     main()

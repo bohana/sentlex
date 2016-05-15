@@ -4,6 +4,8 @@
  Classify input document using sentlex library
 '''
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sentlex.sentanalysis as sentdoc
 import sentlex
 from optparse import OptionParser
@@ -23,17 +25,17 @@ def main():
     mainparser.add_option("--notag", action="store_true", default=False, dest="not_tagged",
                            help="Input document is not POS-tagged (POS tagging will run before classification)")
     (options, args) = mainparser.parse_args()
-    
+
     if not options.inputfile and not options.inputdir:
-        print 'Must give an input file to analyze. Use --file or --dir.'
+        print('Must give an input file to analyze. Use --file or --dir.')
         sys.exit(1)
 
     files = []
     if options.inputfile:
-        files = options.inputfile
+        files = [options.inputfile]
     elif options.inputdir:
         files = [os.path.join(options.inputdir, x) for x in os.listdir(options.inputdir)]
-    
+
     # instantiate selected lexicon and setup classifier
     L = sentlex.SWN3Lexicon()
     ds = sentdoc.BasicDocSentiScore()
@@ -44,7 +46,7 @@ def main():
     for f in files:
         doc = open(f).read()
         result = ds.classify_document(doc, verbose=options.verbose, tagged=(not options.not_tagged))
-        print('{}, {}, {}'.format(f, result[0], result[1]))
+        print(('{}, {}, {}'.format(f, result[0], result[1])))
 
 
 if (__name__ == "__main__"):
