@@ -24,12 +24,13 @@ class PottsDocSentiScore(BasicDocSentiScore):
         ddict.update({'negation_adjustment': 0.1})
         return ddict
 
-    def _doc_score_adjust(self, posval, negval):
+    def _doc_score_adjust(self, posval, negval, config=None):
         '''
          Implements negated term additions based on adjustment weight
         '''
+        config = config or self.config
         (postmp, negtmp) = super(PottsDocSentiScore, self)._doc_score_adjust(posval, negval)
-        if self.config.negation:
+        if config.negation:
             # at this point we should have vNEG populated by the scoring algorithm
             if len(self.vNEG) >= 3:
                 negated_instances = len(
@@ -38,7 +39,7 @@ class PottsDocSentiScore(BasicDocSentiScore):
                 negated_instances = 0
             # with the total of negated instances we can compute the adjustment
             # each negating term counts "negated_term_adj" in scoring weight
-            negtmp = negtmp + (self.config.negation_adjustment * negated_instances)
+            negtmp = negtmp + (config.negation_adjustment * negated_instances)
             self._debug('[PottsDocSentiScore] - Instances Found: %d. Negative score now adjusted from %2.2f to %2.2f' %
                         (negated_instances, negval, negtmp))
         return (postmp, negtmp)

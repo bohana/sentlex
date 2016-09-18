@@ -179,15 +179,16 @@ class BasicDocSentiScore(DocSentiScore):
         vNEG = negdetect.getNegationArray(tags, window)
         return vNEG
 
-    def _get_word_contribution(self, thisword, tagword, scoretuple, i, doclen):
+    def _get_word_contribution(self, thisword, tagword, scoretuple, i, doclen, config=None):
         """
          Returns tuple (posval, negval) containing score contribution for i-th word in document, based
          on algorithm setup and scoretuple retrieved from lexicon.
         """
+        config = config or self.config
         posval = 0.0
         negval = 0.0
         # Negation detection: flip indexes for pos/neg values if negated word
-        if self.config.negation and not self.config.atenuation:
+        if config.negation and not config.atenuation:
             posindex = self.vNEG[i - 1]
             negindex = (1 + self.vNEG[i - 1]) % 2
         else:
@@ -196,33 +197,31 @@ class BasicDocSentiScore(DocSentiScore):
 
         if (
             (
-                (self.config.score_mode == self.SCOREALL) or (self.config.score_mode == self.SCOREBACKOFF) or
-                (self.config.score_mode == self.SCOREONCE and (self.tag_counter[tagword] == 1))
+                (config.score_mode == self.SCOREALL) or (config.score_mode == self.SCOREBACKOFF) or
+                (config.score_mode == self.SCOREONCE and (self.tag_counter[tagword] == 1))
             )
             and
             (
-                (self.config.score_stop and (not self.objectiveWords.is_stop(thisword))) or
-                (not self.config.score_stop)
+                (config.score_stop and (not self.objectiveWords.is_stop(thisword))) or
+                (not config.score_stop)
             )
         ):
-            posval = self.config.score_function(scoretuple[posindex], i, doclen)
-            negval = self.config.score_function(scoretuple[negindex], i, doclen)
-            if self.config.atenuation and self.vNEG[i - 1]:
+            posval = config.score_function(scoretuple[posindex], i, doclen)
+            negval = config.score_function(scoretuple[negindex], i, doclen)
+            if config.atenuation and self.vNEG[i - 1]:
                 # lowers score val when inside a negated window and atenuation is enabled
-                posval *= self.config.at_pos
-                negval *= self.config.at_neg
+                posval *= config.at_pos
+                negval *= config.at_neg
 
-            if self.config.score_freq:
+            if config.score_freq:
                 # Scoring with frequency information
                 posval = self._freq_adjust(posval, self.L.get_freq(thisword))
                 negval = self._freq_adjust(negval, self.L.get_freq(thisword))
 
-            if self.config.score_mode == self.SCOREBACKOFF:
+            if config.score_mode == self.SCOREBACKOFF:
                 # when backoff is enabled we apply exponential backoff to the word contribution
-                posval = self._repeated_backoff(posval, self.tag_counter[
-                                                tagword], self.backoff_alpha)
-                negval = self._repeated_backoff(negval, self.tag_counter[
-                                                tagword], self.backoff_alpha)
+                posval = self._repeated_backoff(posval, self.tag_counter[tagword], self.backoff_alpha)
+                negval = self._repeated_backoff(negval, self.tag_counter[tagword], self.backoff_alpha)
 
             self._debug('[_get_word_contribution] word %s (%s) at %d-th place on docsize %d is eligible (%2.2f, %2.2f).' %
                         (thisword, str(scoretuple), i, doclen, posval, negval))
@@ -239,13 +238,13 @@ class BasicDocSentiScore(DocSentiScore):
 
         return val * (1.0 / math.pow(2, alpha * (repeatcount - 1)))
 
-    def _doc_score_adjust(self, posval, negval):
+    def _doc_score_adjust(self, posval, negval, config=None):
         """
          Final adjustments to doc scoring once scan completes
         """
         return (posval, negval)
 
-    def _freq_adjust(self, score, p):
+    def _freq_adjust(self, score, p, freq_weight=1.0):
         """
           Adjust contribution of a word score based on frequency information given by the formula for self-information:
             I(x) = -log(p(x))
@@ -260,7 +259,7 @@ class BasicDocSentiScore(DocSentiScore):
             p = 0.0005
 
         I = -1 * math.log(p, 2)
-        return score * ((1 - self.config.freq_weight) + (I * (self.config.freq_weight)))
+        return score * ((1 - freq_weight) + (I * (freq_weight)))
 
     def _reset_runtime_vars(self):
         self.vNEG = []
@@ -305,6 +304,8 @@ class BasicDocSentiScore(DocSentiScore):
         if not self.L.is_loaded:
             raise RuntimeError('Lexicon has not been assigned, or not loaded')
 
+        config = self.config
+
         # POS-taging and tag detection
         if not tagged:
             tagged_doc = self.pos_tag(doc)
@@ -330,7 +331,7 @@ class BasicDocSentiScore(DocSentiScore):
         tagUnscored = []
 
         # Negation detection pre-processing - return an array w/ position of negated terms
-        self.vNEG = self._negation_calc(tags, self.config.negation_window)
+        self.vNEG = self._negation_calc(tags, config.negation_window)
 
         # Scan for scores for each POS
         # After POS-tagging a term will appear as either term/POS or term_POS
@@ -346,23 +347,23 @@ class BasicDocSentiScore(DocSentiScore):
             thisword = thisword.lower()
 
             # Adjectives
-            if self.config.a and re.search('(JJ|JJ.)$', thistag):
+            if config.a and re.search('(JJ|JJ.)$', thistag):
                 tagfound = True
-                scoretuple = [self.config.a_adjust * x for x in self.L.getadjective(thisword)]
+                scoretuple = [config.a_adjust * x for x in self.L.getadjective(thisword)]
 
             # Verbs (VBP / VBD/ etc...)
-            if self.config.v and re.search('(VB|VB.)$', thistag):
+            if config.v and re.search('(VB|VB.)$', thistag):
                 tagfound = True
                 thislemma = self._lemmatize_verb(thisword)
-                scoretuple = [self.config.v_adjust * x for x in self.L.getverb(thislemma)]
+                scoretuple = [config.v_adjust * x for x in self.L.getverb(thislemma)]
 
             # Adverbs
-            if self.config.r and re.search('RB$', thistag):
+            if config.r and re.search('RB$', thistag):
                 tagfound = True
                 scoretuple = self.L.getadverb(thisword)
 
             # Nouns
-            if self.config.n and re.search('NN$', thistag):
+            if config.n and re.search('NN$', thistag):
                 tagfound = True
                 scoretuple = self.L.getnoun(thisword)
 
@@ -371,7 +372,7 @@ class BasicDocSentiScore(DocSentiScore):
             #
             if tagfound:
                 self.tag_counter.update([tagword])
-                (posval, negval) = self._get_word_contribution(thisword, tagword, scoretuple, i, doclen)
+                (posval, negval) = self._get_word_contribution(thisword, tagword, scoretuple, i, doclen, config)
                 postotal += posval
                 negtotal += negval
                 self._debug('Running total (pos,neg): %2.2f, %2.2f' % (postotal, negtotal))
@@ -379,9 +380,9 @@ class BasicDocSentiScore(DocSentiScore):
                 if scoretuple == (0, 0):
                     tagUnscored.append(tagword)
                 foundcounter += 1
-                if self.config.negation and self.vNEG[i - 1] == 1:
+                if config.negation and self.vNEG[i - 1] == 1:
                     negcount += 1
-                if self.config.negation:
+                if config.negation:
                     negtag = str(self.vNEG[i - 1])
                 else:
                     negtag = 'NONEG'
@@ -394,7 +395,7 @@ class BasicDocSentiScore(DocSentiScore):
                     annotatedTags.append(tagword)
 
         # Completed scan - execute final score adjustments
-        (resultpos, resultneg) = self._doc_score_adjust(postotal, negtotal)
+        (resultpos, resultneg) = self._doc_score_adjust(postotal, negtotal, config)
 
         # updates class data structures containing results
         self._resultdata = {
