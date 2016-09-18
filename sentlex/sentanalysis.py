@@ -459,18 +459,6 @@ class BasicDocSentiScore(DocSentiScore):
         """
         return score
 
-    def _score_linear(self, score, i, N):
-        """
-         lineasr adjustment of scores per word position in text
-        """
-        # we want the interval to vary from 0.5-1.0 of original score
-        BAND = 0.5
-        FLOOR = 0.5
-        if N == 0:
-            return score
-        else:
-            return score * (((float(i) / float(N)) * BAND) + FLOOR)
-
 
 #
 # Sample Pre-defined algorithms based on BasicDocSentiScore
@@ -517,27 +505,3 @@ class AV_OnceWordsDocSentiScore(BasicDocSentiScore):
         self.set_parameters(L=Lex, a=True, v=True, n=False, r=False,
                             negation=True, negation_window=5,
                             score_mode=self.SCOREONCE, score_stop=True, score_freq=True)
-
-
-class AV_Lin_AllWordsDocSentiScore(BasicDocSentiScore):
-    """
-     Pre-configured BasicDocSentiScore to score once, negation detection enabled, A,V POS tags
-    """
-    def __init__(self, Lex):
-        super(AV_Lin_AllWordsDocSentiScore, self).__init__()
-        self.set_parameters(L=Lex, a=True, v=True, n=False, r=False,
-                            negation=True, negation_window=5,
-                            score_mode=self.SCOREALL, score_stop=True, score_freq=True,
-                            score_function='linear')
-
-
-class A_Lin_AllWordsDocSentiScore(BasicDocSentiScore):
-    """
-     Pre-configured BasicDocSentiScore to score once, negation detection enabled, A,V POS tags
-    """
-    def __init__(self, Lex):
-        super(A_Lin_AllWordsDocSentiScore, self).__init__()
-        self.set_parameters(L=Lex, a=True, v=False, n=False, r=False,
-                            negation=True, negation_window=5,
-                            score_mode=self.SCOREALL, score_stop=True, score_freq=True,
-                            score_function='linear')
