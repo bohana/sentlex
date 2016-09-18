@@ -93,27 +93,3 @@ class A_AggressivePottsSentiScore(BasicDocSentiScore):
         self.set_parameters(L=Lex, a=True, v=False, n=False, r=False,
                             negation=True, negation_window=5, negation_adjustment=0.5,
                             score_mode=self.SCOREALL, score_stop=True, score_freq=True)
-
-
-class AVO_AggressivePottsSentiScore(PottsDocSentiScore):
-    '''
-     Pre-configured PottsDocSentiScore to score all words, A,V POS tags
-    '''
-
-    def __init__(self, Lex):
-        super(AVO_AggressivePottsSentiScore, self).__init__()
-        self.set_parameters(L=Lex, a=True, v=True, n=False, r=False,
-                            negation=True, negation_window=5, negation_adjustment=0.5,
-                            score_mode=self.SCOREONCE, score_stop=True, score_freq=True)
-
-
-class AVO_LightPottsSentiScore(PottsDocSentiScore):
-    '''
-     Pre-configured PottsDocSentiScore to score all words, A,V POS tags
-    '''
-
-    def __init__(self, Lex):
-        super(AVO_LightPottsSentiScore, self).__init__()
-        self.set_parameters(L=Lex, a=True, v=True, n=False, r=False,
-                            negation=True, negation_window=5, negation_adjustment=0.1,
-                            score_mode=self.SCOREONCE, score_stop=True, score_freq=True)
