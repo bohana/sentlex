@@ -39,8 +39,7 @@ def main():
     # instantiate selected lexicon and setup classifier
     L = sentlex.SWN3Lexicon()
     ds = sentdoc.BasicDocSentiScore()
-    ds.set_active_pos(True, True, False, False)
-    ds.set_parameters(score_mode=ds.SCOREALL, score_freq=True, negation=True, negation_window=5)
+    ds.set_parameters(score_mode=ds.SCOREALL, score_freq=True, negation=True, negation_window=5, a=True, v=True, n=False, r=False)
     ds.set_lexicon(L)
 
     for f in files:
