@@ -27,19 +27,32 @@ class DocSentiScore(object):
      This class performs lexicon-based sentiment classification on an input document
      given a set of parameters that configure the classification algorithm.
     """
-    _BASE_INIT_CONFIG = {'negation_window': 5,
-                         'negation': True,
-                         'a': True, 'v': True, 'n': False, 'r': False,
-                         'negated_term_adj': 0.0}
+    _BASE_INIT_CONFIG = {'a': True, 'v': True, 'n': False, 'r': False, 'atenuation': False}
 
     def __init__(self):
         # initialize the default stopwords list
         self.objectiveWords = stopwords.Stopword()
-        # default configuration
-        self._config = self._init_config()
         self.L = None
         self.verbose = False
         self._resultdata = {}
+        self._detector_map = {}
+
+        # register detector functions (negation detection etc)
+        self._register_detector('NEGATION', negdetect.getNegationArray, 'negation', 'negation_window', 'at',
+                                {'negation': True, 'atenuation': False, 'at_pos': 1.0, 'at_neg': 1.0, 'negation_window': 5})
+
+        self._init_config()
+
+    def _register_detector(self, name, f_detector, enabled_param, window_param, atenuation_prefix, parameters_defaults):
+        self._detector_map[name] = {'function': f_detector, 'enabled': enabled_param, 'prefix': atenuation_prefix,
+                                    'window': window_param, 'parameters': parameters_defaults}
+
+    def _run_detectors(self, tags):
+        """Compute influence maps from input tags according to registered algorithms."""
+        for map_type in self._detector_map:
+            f_map = self._detector_map[map_type]['function']
+            window = self._config[self._detector_map[map_type]['window']]
+            self._document_maps[map_type] = f_map(tags, int(window))
 
     def _default_config(self):
         """Implement class-specific initial config here."""
@@ -55,7 +68,10 @@ class DocSentiScore(object):
     def _init_config(self):
         res = self._BASE_INIT_CONFIG.copy()
         res.update(self._default_config())
-        return res
+        for map_type in self._detector_map:
+            res.update(self._detector_map[map_type]['parameters'])
+
+        self._config = res
 
     def classify_document(self, doc, tagged=True, verbose=True, **kwargs):
         """
@@ -161,23 +177,7 @@ class BasicDocSentiScore(DocSentiScore):
                 'freq_weight': 1.0,
                 'backoff_alpha': 0.0,
                 'a_adjust': 1.0,
-                'v_adjust': 1.0,
-                'atenuation': False,
-                'at_pos': 1.0,
-                'at_neg': 1.0}
-
-    #
-    # Lexicon Based Classification Engine
-    # - the methods in this section can be overriden to implement technique variations for lex-based classifiers
-    #
-    def _negation_calc(self, tags, window):
-        """
-         for a list of tokens, calculate array of negated words based on a negation detection
-         algorithm (NegEx in our case).
-         returns arran vNEG containing [0,1] for each index of token on original tags list, indicating negation.
-        """
-        vNEG = negdetect.getNegationArray(tags, window)
-        return vNEG
+                'v_adjust': 1.0}
 
     def _get_word_contribution(self, thisword, tagword, scoretuple, i, doclen, config=None):
         """
@@ -187,14 +187,8 @@ class BasicDocSentiScore(DocSentiScore):
         config = config or self.config
         posval = 0.0
         negval = 0.0
-        # Negation detection: flip indexes for pos/neg values if negated word
-        if config.negation and not config.atenuation:
-            posindex = self.vNEG[i - 1]
-            negindex = (1 + self.vNEG[i - 1]) % 2
-        else:
-            posindex = 0
-            negindex = 1
 
+        # determine if this word should be scored
         if (
             (
                 (config.score_mode == self.SCOREALL) or (config.score_mode == self.SCOREBACKOFF) or
@@ -206,12 +200,17 @@ class BasicDocSentiScore(DocSentiScore):
                 (not config.score_stop)
             )
         ):
+            # flip indexes for pos/neg values if atenuation is disabled (negation maps only)
+            if config.negation and not config.atenuation:
+                vMAP = self._document_maps['NEGATION']
+                posindex = vMAP[i - 1]
+                negindex = (1 + vMAP[i - 1]) % 2
+            else:
+                posindex = 0
+                negindex = 1
+
             posval = config.score_function(scoretuple[posindex], i, doclen)
             negval = config.score_function(scoretuple[negindex], i, doclen)
-            if config.atenuation and self.vNEG[i - 1]:
-                # lowers score val when inside a negated window and atenuation is enabled
-                posval *= config.at_pos
-                negval *= config.at_neg
 
             if config.score_freq:
                 # Scoring with frequency information
@@ -222,6 +221,18 @@ class BasicDocSentiScore(DocSentiScore):
                 # when backoff is enabled we apply exponential backoff to the word contribution
                 posval = self._repeated_backoff(posval, self.tag_counter[tagword], self.backoff_alpha)
                 negval = self._repeated_backoff(negval, self.tag_counter[tagword], self.backoff_alpha)
+
+            for map_type in self._document_maps:
+                # loop every active map
+                vMAP = self._document_maps[map_type]
+                at_prefix = self._detector_map[map_type]['prefix']
+                map_enabled = getattr(config, self._detector_map[map_type]['enabled'])
+                map_enabled &= config.atenuation or (not config.atenuation and map_type == 'NEGATION')
+
+                if map_enabled and config.atenuation and vMAP[i - 1]:
+                    # adjust score val when inside an active window and atenuation is enabled
+                    posval *= getattr(config, at_prefix + '_pos')
+                    negval *= getattr(config, at_prefix + '_neg')
 
             self._debug('[_get_word_contribution] word %s (%s) at %d-th place on docsize %d is eligible (%2.2f, %2.2f).' %
                         (thisword, str(scoretuple), i, doclen, posval, negval))
@@ -262,9 +273,9 @@ class BasicDocSentiScore(DocSentiScore):
         return score * ((1 - freq_weight) + (I * (freq_weight)))
 
     def _reset_runtime_vars(self):
-        self.vNEG = []
         self._resultdata = {}
         self.tag_counter = collections.Counter()
+        self._document_maps = {}
 
     def _lemmatize_verb(self, word):
         """
@@ -331,7 +342,8 @@ class BasicDocSentiScore(DocSentiScore):
         tagUnscored = []
 
         # Negation detection pre-processing - return an array w/ position of negated terms
-        self.vNEG = self._negation_calc(tags, config.negation_window)
+        self._run_detectors(tags)
+        vNEG = self._document_maps['NEGATION']
 
         # Scan for scores for each POS
         # After POS-tagging a term will appear as either term/POS or term_POS
@@ -380,10 +392,10 @@ class BasicDocSentiScore(DocSentiScore):
                 if scoretuple == (0, 0):
                     tagUnscored.append(tagword)
                 foundcounter += 1
-                if config.negation and self.vNEG[i - 1] == 1:
+                if config.negation and vNEG[i - 1] == 1:
                     negcount += 1
                 if config.negation:
-                    negtag = str(self.vNEG[i - 1])
+                    negtag = str(vNEG[i - 1])
                 else:
                     negtag = 'NONEG'
 
@@ -404,7 +416,7 @@ class BasicDocSentiScore(DocSentiScore):
             'resultpos': resultpos,
             'resultneg': resultneg,
             'tokens_found': foundcounter,
-            'tokens_negated': sum(self.vNEG),
+            'tokens_negated': sum(vNEG),
             'found_list': self.tag_counter,
             'unscored_list': tagUnscored
         }

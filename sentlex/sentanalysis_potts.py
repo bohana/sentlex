@@ -30,11 +30,12 @@ class PottsDocSentiScore(BasicDocSentiScore):
         '''
         config = config or self.config
         (postmp, negtmp) = super(PottsDocSentiScore, self)._doc_score_adjust(posval, negval)
+        vNEG = self._document_maps['NEGATION']
         if config.negation:
             # at this point we should have vNEG populated by the scoring algorithm
-            if len(self.vNEG) >= 3:
+            if len(vNEG) >= 3:
                 negated_instances = len(
-                    [self.vNEG[i:i + 2] for i in range(len(self.vNEG) - 1) if self.vNEG[i:i + 2] == [0, 1]])
+                    [vNEG[i:i + 2] for i in range(len(vNEG) - 1) if vNEG[i:i + 2] == [0, 1]])
             else:
                 negated_instances = 0
             # with the total of negated instances we can compute the adjustment

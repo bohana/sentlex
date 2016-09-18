@@ -8,9 +8,5 @@ def basic_docscore():
     return DocSentiScore()
 
 
-def test_config_init(basic_docscore):
-    assert basic_docscore._init_config()['negation']
-
-
 def test_default_config(basic_docscore):
     assert basic_docscore.config.negation
