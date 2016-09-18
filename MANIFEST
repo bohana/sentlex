@@ -10,8 +10,6 @@ sentlex/docscoreutil.py
 sentlex/negdetect.py
 sentlex/sentanalysis.py
 sentlex/sentanalysis_potts.py
-sentlex/sentanalysis_sent.py
-sentlex/sentanalysis_taboada.py
 sentlex/sentlex.py
 sentlex/sentlexutil.py
 sentlex/stopwords.py
