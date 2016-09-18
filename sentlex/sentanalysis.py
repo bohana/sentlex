@@ -15,7 +15,6 @@ import nltk.stem
 import collections
 
 # library imports
-from . import sentlex
 from . import negdetect
 from . import stopwords
 from .docscoreutil import *
@@ -28,17 +27,35 @@ class DocSentiScore(object):
      This class performs lexicon-based sentiment classification on an input document
      given a set of parameters that configure the classification algorithm.
     """
+    _BASE_INIT_CONFIG = {'negation_window': 5,
+                         'negation': True,
+                         'a': True, 'v': True, 'n': False, 'r': False,
+                         'negated_term_adj': 0.0}
+
     def __init__(self):
         # initialize the default stopwords list
         self.objectiveWords = stopwords.Stopword()
         # default configuration
-        self.set_active_pos(True, True, False, False)
-        self.negation = True
-        self.negation_window = 5
-        self.negated_term_adj = 0.0
+        self._config = self._init_config()
         self.L = None
         self.verbose = False
         self._resultdata = {}
+
+    def _default_config(self):
+        """Implement class-specific initial config here."""
+        return dict()
+
+    @property
+    def config(self):
+        return collections.namedtuple('config', field_names=self._config.keys())(**self._config)
+
+    def set_config(self, k, v):
+        self._config[k] = v
+
+    def _init_config(self):
+        res = self._BASE_INIT_CONFIG.copy()
+        res.update(self._default_config())
+        return res
 
     def classify_document(self, doc, tagged=True, verbose=True, **kwargs):
         """
@@ -122,38 +139,32 @@ class BasicDocSentiScore(DocSentiScore):
         (some basic functions are supplied in the class, but they can be user defined)
 
     """
+    # Constants driving term-counting behavior
+    SCOREALL = 0
+    SCOREONCE = 1
+    SCOREBACKOFF = 2
+
     def __init__(self):
         # calls superclass
         super(BasicDocSentiScore, self).__init__()
-        # Constants driving term-counting behavior
-        self.SCOREALL = 0
-        self.SCOREONCE = 1
-        self.SCOREBACKOFF = 2
-        # default configuration for Basic
-        self.score_mode = self.SCOREALL
-        self.score_freq = False
-        self.score_stop = False
-        self.score_function = self._score_noop
-        self.negated_term_adj = 0.0
-        self.freq_weight = 1.0
-        self.backoff_alpha = 0.0
-        self.a_adjust = 1.0
-        self.v_adjust = 1.0
-        self.atenuation = False
-        self.at_pos = 1.0
-        self.at_neg = 1.0
+
         # Setup stem preprocessing for verbs
         self.wnl = nltk.stem.WordNetLemmatizer()
         self.lemma_cache = {}
 
-    def set_active_pos(self, a=True, v=True, n=False, r=False):
-        """
-         determine which POS tags to apply during classification
-        """
-        self.a = a
-        self.v = v
-        self.n = n
-        self.r = r
+    def _default_config(self):
+        return {'score_mode': self.SCOREALL,
+                'score_freq': False,
+                'score_stop': False,
+                'score_function': self._score_noop,
+                'negated_term_adj': 0.0,
+                'freq_weight': 1.0,
+                'backoff_alpha': 0.0,
+                'a_adjust': 1.0,
+                'v_adjust': 1.0,
+                'atenuation': False,
+                'at_pos': 1.0,
+                'at_neg': 1.0}
 
     #
     # Lexicon Based Classification Engine
@@ -176,7 +187,7 @@ class BasicDocSentiScore(DocSentiScore):
         posval = 0.0
         negval = 0.0
         # Negation detection: flip indexes for pos/neg values if negated word
-        if self.negation and not self.atenuation:
+        if self.config.negation and not self.config.atenuation:
             posindex = self.vNEG[i - 1]
             negindex = (1 + self.vNEG[i - 1]) % 2
         else:
@@ -185,28 +196,28 @@ class BasicDocSentiScore(DocSentiScore):
 
         if (
             (
-                (self.score_mode == self.SCOREALL) or (self.score_mode == self.SCOREBACKOFF) or
-                (self.score_mode == self.SCOREONCE and (self.tag_counter[tagword] == 1))
+                (self.config.score_mode == self.SCOREALL) or (self.config.score_mode == self.SCOREBACKOFF) or
+                (self.config.score_mode == self.SCOREONCE and (self.tag_counter[tagword] == 1))
             )
             and
             (
-                (self.score_stop and (not self.objectiveWords.is_stop(thisword))) or
-                (not self.score_stop)
+                (self.config.score_stop and (not self.objectiveWords.is_stop(thisword))) or
+                (not self.config.score_stop)
             )
         ):
-            posval = self.score_function(scoretuple[posindex], i, doclen)
-            negval = self.score_function(scoretuple[negindex], i, doclen)
-            if self.atenuation and self.vNEG[i - 1]:
+            posval = self.config.score_function(scoretuple[posindex], i, doclen)
+            negval = self.config.score_function(scoretuple[negindex], i, doclen)
+            if self.config.atenuation and self.vNEG[i - 1]:
                 # lowers score val when inside a negated window and atenuation is enabled
-                posval *= self.at_pos
-                negval *= self.at_neg
+                posval *= self.config.at_pos
+                negval *= self.config.at_neg
 
-            if self.score_freq:
+            if self.config.score_freq:
                 # Scoring with frequency information
                 posval = self._freq_adjust(posval, self.L.get_freq(thisword))
                 negval = self._freq_adjust(negval, self.L.get_freq(thisword))
 
-            if self.score_mode == self.SCOREBACKOFF:
+            if self.config.score_mode == self.SCOREBACKOFF:
                 # when backoff is enabled we apply exponential backoff to the word contribution
                 posval = self._repeated_backoff(posval, self.tag_counter[
                                                 tagword], self.backoff_alpha)
@@ -249,7 +260,7 @@ class BasicDocSentiScore(DocSentiScore):
             p = 0.0005
 
         I = -1 * math.log(p, 2)
-        return score * ((1 - self.freq_weight) + (I * (self.freq_weight)))
+        return score * ((1 - self.config.freq_weight) + (I * (self.config.freq_weight)))
 
     def _reset_runtime_vars(self):
         self.vNEG = []
@@ -291,13 +302,15 @@ class BasicDocSentiScore(DocSentiScore):
         # Process input parameters, if any
         self.set_parameters(**kwargs)
         self.verbose = verbose
-        assert self.L and self.L.is_loaded, 'Lexicon has not been assigned, or not loaded'
+        if not self.L.is_loaded:
+            raise RuntimeError('Lexicon has not been assigned, or not loaded')
 
         # POS-taging and tag detection
         if not tagged:
             tagged_doc = self.pos_tag(doc)
         else:
             tagged_doc = doc
+
         tagsep = self._detect_tag(tagged_doc)
         if not tagsep:
             raise RuntimeError('Unable to detect tag separator in {}'.format(' '.join(doc[:100])))
@@ -317,7 +330,7 @@ class BasicDocSentiScore(DocSentiScore):
         tagUnscored = []
 
         # Negation detection pre-processing - return an array w/ position of negated terms
-        self.vNEG = self._negation_calc(tags, self.negation_window)
+        self.vNEG = self._negation_calc(tags, self.config.negation_window)
 
         # Scan for scores for each POS
         # After POS-tagging a term will appear as either term/POS or term_POS
@@ -333,23 +346,23 @@ class BasicDocSentiScore(DocSentiScore):
             thisword = thisword.lower()
 
             # Adjectives
-            if self.a and re.search('(JJ|JJ.)$', thistag):
+            if self.config.a and re.search('(JJ|JJ.)$', thistag):
                 tagfound = True
-                scoretuple = [self.a_adjust * x for x in self.L.getadjective(thisword)]
+                scoretuple = [self.config.a_adjust * x for x in self.L.getadjective(thisword)]
 
             # Verbs (VBP / VBD/ etc...)
-            if self.v and re.search('(VB|VB.)$', thistag):
+            if self.config.v and re.search('(VB|VB.)$', thistag):
                 tagfound = True
                 thislemma = self._lemmatize_verb(thisword)
-                scoretuple = [self.v_adjust * x for x in self.L.getverb(thislemma)]
+                scoretuple = [self.config.v_adjust * x for x in self.L.getverb(thislemma)]
 
             # Adverbs
-            if self.r and re.search('RB$', thistag):
+            if self.config.r and re.search('RB$', thistag):
                 tagfound = True
                 scoretuple = self.L.getadverb(thisword)
 
             # Nouns
-            if self.n and re.search('NN$', thistag):
+            if self.config.n and re.search('NN$', thistag):
                 tagfound = True
                 scoretuple = self.L.getnoun(thisword)
 
@@ -358,8 +371,7 @@ class BasicDocSentiScore(DocSentiScore):
             #
             if tagfound:
                 self.tag_counter.update([tagword])
-                (posval, negval) = self._get_word_contribution(
-                    thisword, tagword, scoretuple, i, doclen)
+                (posval, negval) = self._get_word_contribution(thisword, tagword, scoretuple, i, doclen)
                 postotal += posval
                 negtotal += negval
                 self._debug('Running total (pos,neg): %2.2f, %2.2f' % (postotal, negtotal))
@@ -367,9 +379,9 @@ class BasicDocSentiScore(DocSentiScore):
                 if scoretuple == (0, 0):
                     tagUnscored.append(tagword)
                 foundcounter += 1
-                if self.negation and self.vNEG[i - 1] == 1:
+                if self.config.negation and self.vNEG[i - 1] == 1:
                     negcount += 1
-                if self.negation:
+                if self.config.negation:
                     negtag = str(self.vNEG[i - 1])
                 else:
                     negtag = 'NONEG'
@@ -415,42 +427,16 @@ class BasicDocSentiScore(DocSentiScore):
         if 'L' in kwargs:
             self.set_lexicon(kwargs['L'])
 
-        # POS tags to enable
-        self.set_active_pos(a=kwargs.get('a', self.a),
-                            v=kwargs.get('v', self.v),
-                            n=kwargs.get('n', self.n),
-                            r=kwargs.get('r', self.r))
+        # update all known parameters
+        self._config.update({k: kwargs[k] for k in kwargs if k in self._config})
 
-        # Negation
-        self.negation = kwargs.get('negation', self.negation)
-        if 'negation_window' in kwargs:
-            self.negation_window = int(kwargs['negation_window'])
+        # Implicitly update negation
+        if any([k in kwargs for k in ['negation_window', 'atenuation']]):
             self.negation = True
-
-        if 'atenuation' in kwargs:
-            self.negation = True
-            self.atenuation = kwargs['atenuation']
-
-        self.at_pos = float(kwargs.get('at_pos', self.at_pos))
-        self.at_neg = float(kwargs.get('at_neg', self.at_neg))
-
-        self.score_mode = kwargs.get('score_mode', self.score_mode)
-        self.score_freq = kwargs.get('score_freq', self.score_freq)
-        self.score_stop = kwargs.get('score_stop', self.score_stop)
 
         if 'score_function' in kwargs:
             self.score_function = getattr(self, '_score_' + kwargs['score_function'])
 
-        if 'freq_weight' in kwargs:
-            self.freq_weight = float(kwargs['freq_weight'])
-
-        if 'backoff_alpha' in kwargs:
-            self.backoff_alpha = float(kwargs['backoff_alpha'])
-
-        if 'a_adjust' in kwargs:
-            self.a_adjust = float(kwargs['a_adjust'])
-        if 'v_adjust' in kwargs:
-            self.v_adjust = float(kwargs['v_adjust'])
     #
     # score weight adjustment functions
     #
@@ -471,6 +457,7 @@ class BasicDocSentiScore(DocSentiScore):
             return score
         else:
             return score * (((float(i) / float(N)) * BAND) + FLOOR)
+
 
 #
 # Sample Pre-defined algorithms based on BasicDocSentiScore

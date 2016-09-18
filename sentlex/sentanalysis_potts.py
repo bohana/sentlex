@@ -6,13 +6,7 @@
    derived from the work of [Potts, 2011]
 
 '''
-
-# library imports
 from __future__ import absolute_import
-from . import sentlex
-from . import negdetect
-from . import stopwords
-from .docscoreutil import *
 from .sentanalysis import BasicDocSentiScore
 from six.moves import range
 
@@ -25,17 +19,17 @@ class PottsDocSentiScore(BasicDocSentiScore):
      This class *required* negation detection to be active.
     '''
 
-    def __init__(self):
-        # calls superclass
-        super(PottsDocSentiScore, self).__init__()
-        self.negated_term_adj = 0.1
+    def _default_config(self):
+        ddict = super(PottsDocSentiScore, self)._default_config()
+        ddict.update({'negation_adjustment': 0.1})
+        return ddict
 
     def _doc_score_adjust(self, posval, negval):
         '''
          Implements negated term additions based on adjustment weight
         '''
         (postmp, negtmp) = super(PottsDocSentiScore, self)._doc_score_adjust(posval, negval)
-        if self.negation:
+        if self.config.negation:
             # at this point we should have vNEG populated by the scoring algorithm
             if len(self.vNEG) >= 3:
                 negated_instances = len(
@@ -44,18 +38,10 @@ class PottsDocSentiScore(BasicDocSentiScore):
                 negated_instances = 0
             # with the total of negated instances we can compute the adjustment
             # each negating term counts "negated_term_adj" in scoring weight
-            negtmp = negtmp + (self.negated_term_adj * negated_instances)
+            negtmp = negtmp + (self.config.negation_adjustment * negated_instances)
             self._debug('[PottsDocSentiScore] - Instances Found: %d. Negative score now adjusted from %2.2f to %2.2f' %
                         (negated_instances, negval, negtmp))
         return (postmp, negtmp)
-
-    def set_parameters(self, **kwargs):
-        '''
-          In this section we simply add logic for self.negated_term_adj and call super for everything else
-        '''
-        super(PottsDocSentiScore, self).set_parameters(**kwargs)
-        if 'negation_adjustment' in list(kwargs.keys()):
-            self.negated_term_adj = kwargs['negation_adjustment']
 
 
 #
